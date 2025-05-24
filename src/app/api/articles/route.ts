@@ -7,10 +7,21 @@ type ArticleListItem = {
   title: string
   domain: string
   excerpt: string | null
+  cleanedHTML: string
   textContent: string
   createdAt: Date
   read: boolean
   scroll: number
+  // AI Processing fields
+  summary?: string | null
+  keyPoints?: string | null
+  readingTime?: number | null
+  sentiment?: string | null
+  primaryCategory?: string | null
+  categories?: string | null
+  tags?: string | null
+  aiProcessed?: boolean
+  processedAt?: Date | null
 }
 
 /**
@@ -45,17 +56,6 @@ export async function GET(request: NextRequest) {
       const allArticles = await prisma.article.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          url: true,
-          title: true,
-          domain: true,
-          excerpt: true,
-          textContent: true,
-          createdAt: true,
-          read: true,
-          scroll: true,
-        },
       })
 
       console.log(`Found ${allArticles.length} total articles before search filter`)
@@ -89,17 +89,10 @@ export async function GET(request: NextRequest) {
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
-        select: {
-          id: true,
-          url: true,
-          title: true,
-          domain: true,
-          excerpt: true,
-          createdAt: true,
-          read: true,
-          scroll: true,
-        },
       })
+      
+      // Remove textContent from response to reduce payload size
+      articles = articles.map(({ textContent, ...article }) => article)
     }
 
     return NextResponse.json({

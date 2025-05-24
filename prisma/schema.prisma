@@ -22,5 +22,16 @@ model Article {
   read        Boolean  @default(false)
   scroll      Int      @default(0) // 0-100
   
+  // AI Processing fields
+  summary         String?  // AI-generated summary
+  keyPoints       String?  // JSON array of key points
+  readingTime     Int?     // Estimated reading time in minutes
+  sentiment       String?  // positive, negative, neutral
+  primaryCategory String?  // Main category
+  categories      String?  // JSON array of categories
+  tags            String?  // JSON array of tags
+  aiProcessed     Boolean  @default(false) // Whether AI processing is complete
+  processedAt     DateTime? // When AI processing was completed
+  
   @@map("articles")
 }

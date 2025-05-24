@@ -9,6 +9,16 @@ export interface Article {
   createdAt: Date
   read: boolean
   scroll: number
+  // AI Processing fields
+  summary?: string | null
+  keyPoints?: string | null
+  readingTime?: number | null
+  sentiment?: string | null
+  primaryCategory?: string | null
+  categories?: string | null
+  tags?: string | null
+  aiProcessed?: boolean
+  processedAt?: Date | null
 }
 
 export interface CreateArticleRequest {

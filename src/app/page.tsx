@@ -7,6 +7,7 @@ import { AddArticleForm } from '@/components/AddArticleForm'
 import { ArticleList } from '@/components/ArticleList'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { ExportImport } from '@/components/ExportImport'
+import { BatchProcessing } from '@/components/BatchProcessing'
 
 export default function HomePage() {
   const [articles, setArticles] = useState<Article[]>([])
@@ -103,8 +104,9 @@ export default function HomePage() {
         </div>
 
         {showSettings && (
-          <div className="mb-8">
+          <div className="mb-8 space-y-6">
             <ExportImport onImportComplete={fetchArticles} />
+            <BatchProcessing onComplete={fetchArticles} />
           </div>
         )}
 
@@ -144,6 +146,11 @@ export default function HomePage() {
           onArticleUpdated={handleArticleUpdated}
           onArticleDeleted={handleArticleDeleted}
         />
+
+        {/* Batch processing component */}
+        <div className="mt-8">
+          <BatchProcessing />
+        </div>
       </div>
     </div>
   )

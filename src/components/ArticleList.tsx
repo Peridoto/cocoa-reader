@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { Article } from '@/types/article'
 import { formatDistanceToNow } from '@/lib/utils'
+import { ArticleAISummary } from './ArticleAISummary'
+import { AIProcessButton } from './AIProcessButton'
 
 interface ArticleListProps {
   articles: Article[]
@@ -50,6 +52,22 @@ export function ArticleList({
     } catch (error) {
       console.error('Error deleting article:', error)
     }
+  }
+
+  const handleAIProcessComplete = (articleId: string) => {
+    // Refresh the specific article to show updated AI data
+    const refreshArticle = async () => {
+      try {
+        const response = await fetch(`/api/article/${articleId}`)
+        if (response.ok) {
+          const updatedArticle = await response.json()
+          onArticleUpdated(updatedArticle)
+        }
+      } catch (error) {
+        console.error('Error refreshing article:', error)
+      }
+    }
+    refreshArticle()
   }
 
   if (loading) {
@@ -113,19 +131,22 @@ export function ArticleList({
                   {article.excerpt}
                 </p>
               )}
+
+              {/* AI Summary Component */}
+              <ArticleAISummary article={article} />
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 min-w-[120px]">
               <Link
                 href={`/read/${article.id}`}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center text-sm"
               >
                 Read
               </Link>
               
               <button
                 onClick={() => toggleReadStatus(article)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`px-4 py-2 rounded-lg font-medium transition-colors text-sm ${
                   article.read
                     ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                     : 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/40'
@@ -136,10 +157,18 @@ export function ArticleList({
               
               <button
                 onClick={() => deleteArticle(article.id)}
-                className="px-4 py-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg font-medium hover:bg-red-200 dark:hover:bg-red-900/40 transition-colors"
+                className="px-4 py-2 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg font-medium hover:bg-red-200 dark:hover:bg-red-900/40 transition-colors text-sm"
               >
                 Delete
               </button>
+
+              {/* AI Process Button */}
+              <AIProcessButton 
+                articleId={article.id} 
+                isProcessed={article.aiProcessed || false}
+                onProcessComplete={() => handleAIProcessComplete(article.id)} 
+                size="sm"
+              />
             </div>
           </div>
         </article>

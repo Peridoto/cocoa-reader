@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Article } from '@/types/article'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { calculateReadingProgress, debounce } from '@/lib/utils'
+import { ArticleAISummary } from '@/components/ArticleAISummary'
+import { AIProcessButton } from '@/components/AIProcessButton'
 
 interface ReadingPageProps {
   params: { id: string }
@@ -114,6 +116,18 @@ export default function ReadingPage({ params }: ReadingPageProps) {
     }
   }
 
+  const handleAIProcessComplete = async () => {
+    try {
+      const response = await fetch(`/api/article/${params.id}`)
+      if (response.ok) {
+        const updatedArticle = await response.json()
+        setArticle(updatedArticle)
+      }
+    } catch (error) {
+      console.error('Error refreshing article:', error)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
@@ -209,6 +223,22 @@ export default function ReadingPage({ params }: ReadingPageProps) {
                   day: 'numeric',
                 })}
               </time>
+            </div>
+
+            {/* AI Summary and Processing */}
+            <div className="mt-6 space-y-4">
+              <ArticleAISummary article={article} showFullSummary={true} />
+              
+              {!article.aiProcessed && (
+                <div className="flex justify-start">
+                  <AIProcessButton 
+                    articleId={article.id} 
+                    isProcessed={article.aiProcessed || false}
+                    onProcessComplete={handleAIProcessComplete}
+                    size="md"
+                  />
+                </div>
+              )}
             </div>
           </header>
 
