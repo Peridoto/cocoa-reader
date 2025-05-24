@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { scrapeArticle } from '../src/lib/scraper'
-import * as webEthics from '../src/lib/web-ethics'
 
 // Mock the web-ethics module
+const mockCheckScrapingPermissions = vi.fn()
+const mockApplyCrawlDelay = vi.fn()
+const mockParseMetaAndHeaders = vi.fn()
+
 vi.mock('../src/lib/web-ethics', () => ({
-  checkScrapingPermissions: vi.fn(),
-  applyCrawlDelay: vi.fn(),
-  parseMetaAndHeaders: vi.fn(),
+  checkScrapingPermissions: mockCheckScrapingPermissions,
+  applyCrawlDelay: mockApplyCrawlDelay,
+  parseMetaAndHeaders: mockParseMetaAndHeaders,
 }))
 
 // Mock fetch globally
@@ -18,16 +21,15 @@ describe('Article Scraper with Ethics Compliance', () => {
   })
 
   it('should scrape article content successfully when permissions allow', async () => {
-    
     // Mock ethics checks to allow scraping
-    ;(checkScrapingPermissions as any).mockResolvedValueOnce({
+    mockCheckScrapingPermissions.mockResolvedValueOnce({
       allowed: true,
       reason: 'Scraping is allowed',
       crawlDelay: undefined,
       respectHeaders: { noarchive: false, noindex: false, nofollow: false }
     })
     
-    ;(parseMetaAndHeaders as any).mockReturnValueOnce({
+    mockParseMetaAndHeaders.mockReturnValueOnce({
       noarchive: false,
       noindex: false,
       nofollow: false
@@ -46,13 +48,12 @@ describe('Article Scraper with Ethics Compliance', () => {
       </html>
     `
 
-    // Mock the fetch calls (robots.txt HEAD request, then actual content)
-    ;(fetch as any)
-      .mockResolvedValueOnce({
-        ok: true,
-        text: () => Promise.resolve(mockHtml),
-        headers: new Headers()
-      })
+    // Mock the fetch calls
+    ;(fetch as any).mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(mockHtml),
+      headers: new Headers()
+    })
 
     const result = await scrapeArticle('https://example.com/test-article')
 
@@ -65,16 +66,14 @@ describe('Article Scraper with Ethics Compliance', () => {
   })
 
   it('should respect crawl delay when specified', async () => {
-    const { checkScrapingPermissions, applyCrawlDelay, parseMetaAndHeaders } = await import('../src/lib/web-ethics')
-    
-    ;(checkScrapingPermissions as any).mockResolvedValueOnce({
+    mockCheckScrapingPermissions.mockResolvedValueOnce({
       allowed: true,
       reason: 'Scraping is allowed',
       crawlDelay: 2,
       respectHeaders: { noarchive: false, noindex: false, nofollow: false }
     })
     
-    ;(parseMetaAndHeaders as any).mockReturnValueOnce({
+    mockParseMetaAndHeaders.mockReturnValueOnce({
       noarchive: false,
       noindex: false,
       nofollow: false
@@ -90,13 +89,11 @@ describe('Article Scraper with Ethics Compliance', () => {
 
     await scrapeArticle('https://example.com/test')
 
-    expect(applyCrawlDelay).toHaveBeenCalledWith(2)
+    expect(mockApplyCrawlDelay).toHaveBeenCalledWith(2)
   })
 
   it('should refuse to scrape when permissions deny access', async () => {
-    const { checkScrapingPermissions } = await import('../src/lib/web-ethics')
-    
-    ;(checkScrapingPermissions as any).mockResolvedValueOnce({
+    mockCheckScrapingPermissions.mockResolvedValueOnce({
       allowed: false,
       reason: 'URL is disallowed by robots.txt',
       respectHeaders: { noarchive: false, noindex: false, nofollow: false }
@@ -108,15 +105,13 @@ describe('Article Scraper with Ethics Compliance', () => {
   })
 
   it('should refuse to scrape pages with noarchive directive', async () => {
-    const { checkScrapingPermissions, parseMetaAndHeaders } = await import('../src/lib/web-ethics')
-    
-    ;(checkScrapingPermissions as any).mockResolvedValueOnce({
+    mockCheckScrapingPermissions.mockResolvedValueOnce({
       allowed: true,
       reason: 'Scraping is allowed',
       respectHeaders: { noarchive: false, noindex: false, nofollow: false }
     })
     
-    ;(parseMetaAndHeaders as any).mockReturnValueOnce({
+    mockParseMetaAndHeaders.mockReturnValueOnce({
       noarchive: true,
       noindex: false,
       nofollow: false
@@ -136,9 +131,7 @@ describe('Article Scraper with Ethics Compliance', () => {
   })
 
   it('should handle fetch errors during ethics check', async () => {
-    const { checkScrapingPermissions } = await import('../src/lib/web-ethics')
-    
-    ;(checkScrapingPermissions as any).mockRejectedValueOnce(new Error('Network error during ethics check'))
+    mockCheckScrapingPermissions.mockRejectedValueOnce(new Error('Network error during ethics check'))
 
     await expect(scrapeArticle('https://invalid-url.com')).rejects.toThrow(
       'Failed to scrape article ethically'
@@ -146,9 +139,7 @@ describe('Article Scraper with Ethics Compliance', () => {
   })
 
   it('should handle HTTP errors', async () => {
-    const { checkScrapingPermissions, parseMetaAndHeaders } = await import('../src/lib/web-ethics')
-    
-    ;(checkScrapingPermissions as any).mockResolvedValueOnce({
+    mockCheckScrapingPermissions.mockResolvedValueOnce({
       allowed: true,
       reason: 'Scraping is allowed',
       respectHeaders: { noarchive: false, noindex: false, nofollow: false }

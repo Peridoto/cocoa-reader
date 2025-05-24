@@ -12,7 +12,9 @@
     "db:reset": "prisma migrate reset --force",
     "db:seed": "tsx prisma/seed.ts",
     "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "demo:ethics": "tsx demo-ethics.js",
+    "test:live": "node test-live-ethics.js"
   },
   "dependencies": {
     "@mozilla/readability": "^0.5.0",

@@ -33,11 +33,14 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Starting to scrape article:', url)
-    // Scrape the article content
-    const scrapedContent = await scrapeArticle(url)
-    console.log('Scraping completed, saving to database...')
+    // Scrape the article content with ethics compliance
+    const scrapingResult = await scrapeArticle(url)
+    console.log('Scraping completed ethically, saving to database...')
 
-    // Save to database
+    // Extract only the content fields for database storage
+    const { ethicsCompliant, permissions, ...scrapedContent } = scrapingResult
+
+    // Save to database with ethics compliance info logged
     const article = await prisma.article.create({
       data: {
         url,
@@ -45,7 +48,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log('Article saved successfully:', article.id)
+    console.log('Article saved successfully with ethics compliance:', {
+      id: article.id,
+      ethicsCompliant,
+      permissions: permissions.reason
+    })
     return NextResponse.json(article, { status: 201 })
   } catch (error) {
     console.error('Error creating article:', error)

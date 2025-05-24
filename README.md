@@ -11,6 +11,7 @@ A modern, local-first read-later application built with Next.js 14. Save web art
 - **🔍 Search & Filter**: Find articles by title, domain, or content with read/unread filtering
 - **📱 PWA Support**: Install as a native app with offline functionality
 - **🔒 Privacy First**: 100% local storage, no external services or tracking
+- **🤖 Web Ethics**: Full robots.txt compliance, respects noarchive directives and crawl delays
 - **♿ Accessible**: AA contrast levels and full keyboard navigation support
 
 ## 🛠 Tech Stack
@@ -159,6 +160,34 @@ CREATE TABLE articles (
   scroll      INTEGER DEFAULT 0
 );
 ```
+
+## 🤖 Web Ethics & Compliance
+
+Cocoa Reader implements comprehensive web ethics compliance to ensure responsible scraping:
+
+### 🛡️ What We Respect
+
+- **robots.txt Files**: Automatically checks and follows site-wide scraping rules
+- **Meta Directives**: Honors `noarchive`, `noindex`, and `nofollow` directives
+- **HTTP Headers**: Respects `X-Robots-Tag` and other crawler directives
+- **Crawl Delays**: Automatically applies rate limiting as specified in robots.txt
+- **User Agent**: Properly identifies as "CocoaReader" with contact information
+
+### 🚫 When Scraping is Refused
+
+The app will refuse to save articles when:
+- Path is disallowed in robots.txt
+- Page contains `noarchive` directive
+- Site explicitly blocks the user agent
+- HTTP errors indicate access restrictions
+
+### 📊 Transparency
+
+- Clear error messages explain why scraping was denied
+- All ethics decisions are logged for transparency
+- Test suite ensures compliance behavior works correctly
+
+See [WEB_ETHICS.md](./WEB_ETHICS.md) for detailed documentation.
 
 ## 🔌 API Endpoints
 
