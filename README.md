@@ -6,11 +6,15 @@ A modern, local-first read-later application built with Next.js 14. Save web art
 
 - **🌐 Article Saving**: Paste any URL to save articles with automatic content extraction
 - **📖 Clean Reading**: Distraction-free reading experience with beautiful typography
+- **🤖 AI Processing**: Local AI-powered article analysis with summaries, key points, categories, and sentiment analysis
+- **⚡ Batch Processing**: Process multiple articles with AI analysis in bulk
+- **🏷️ Smart Categorization**: Automatic tagging and categorization of saved articles
+- **⏱️ Reading Time**: AI-estimated reading time for better planning
 - **🌙 Dark Mode**: Automatic dark mode detection with manual toggle
 - **📊 Progress Tracking**: Track reading progress with scroll-based completion
 - **🔍 Search & Filter**: Find articles by title, domain, or content with read/unread filtering
 - **📱 PWA Support**: Install as a native app with offline functionality
-- **🔒 Privacy First**: 100% local storage, no external services or tracking
+- **🔒 Privacy First**: 100% local storage, no external services or tracking (AI processing runs locally)
 - **🤖 Web Ethics**: Full robots.txt compliance, respects noarchive directives and crawl delays
 - **♿ Accessible**: AA contrast levels and full keyboard navigation support
 
@@ -19,6 +23,7 @@ A modern, local-first read-later application built with Next.js 14. Save web art
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes
 - **Database**: SQLite with Prisma ORM
+- **AI Processing**: Local text analysis (summaries, categorization, sentiment analysis)
 - **Content Processing**: Mozilla Readability + jsdom
 - **PWA**: Service Worker with Workbox
 - **Testing**: Vitest
@@ -63,15 +68,24 @@ That's it! The app is ready to use with example articles already seeded.
 2. Click "Save Article" 
 3. The app will automatically extract clean content
 
+### AI Processing
+1. **Individual Processing**: Click "Generate AI Summary" on any article
+2. **Batch Processing**: Use settings menu to process multiple articles at once
+3. **View Insights**: See AI-generated summaries, categories, key points, and reading time
+4. **Smart Categorization**: Articles are automatically categorized (Technology, Programming, etc.)
+5. **Sentiment Analysis**: Get sentiment insights for each article
+
 ### Reading Articles
 1. Click "Read" on any saved article
 2. Enjoy distraction-free reading with progress tracking
-3. Toggle read status and dark mode as needed
+3. View AI summaries and metadata alongside content
+4. Toggle read status and dark mode as needed
 
 ### Managing Articles
 - **Filter**: Use "All", "Unread", "Read" filter buttons
 - **Search**: Type in the search box to find articles
 - **Delete**: Click delete button to remove articles
+- **Categories**: Filter by AI-generated categories and tags
 
 ## 🗂 Project Structure
 
