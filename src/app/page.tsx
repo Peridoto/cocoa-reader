@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Article } from '@/types/article'
 import { AddArticleForm } from '@/components/AddArticleForm'
 import { ArticleList } from '@/components/ArticleList'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { debounce } from '@/lib/utils'
 
 export default function HomePage() {
@@ -72,9 +73,12 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <header className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Cocoa Reader
-          </h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+              Cocoa Reader
+            </h1>
+            <ThemeToggle />
+          </div>
           <p className="text-gray-600 dark:text-gray-400">
             Save articles to read later in a clean, distraction-free environment
           </p>

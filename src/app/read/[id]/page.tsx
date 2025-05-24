@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Article } from '@/types/article'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { calculateReadingProgress, debounce } from '@/lib/utils'
 
 interface ReadingPageProps {
@@ -14,7 +15,6 @@ export default function ReadingPage({ params }: ReadingPageProps) {
   const [article, setArticle] = useState<Article | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [isDarkMode, setIsDarkMode] = useState(false)
   const [readingProgress, setReadingProgress] = useState(0)
 
   // Debounced function to update scroll progress
@@ -52,28 +52,6 @@ export default function ReadingPage({ params }: ReadingPageProps) {
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [updateScrollProgress])
-
-  // Detect system dark mode preference
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    setIsDarkMode(mediaQuery.matches)
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setIsDarkMode(e.matches)
-    }
-
-    mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [])
-
-  // Apply dark mode class
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [isDarkMode])
 
   // Fetch article
   useEffect(() => {
@@ -177,13 +155,7 @@ export default function ReadingPage({ params }: ReadingPageProps) {
               {article.read ? 'Read' : 'Mark as Read'}
             </button>
 
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              aria-label="Toggle dark mode"
-            >
-              {isDarkMode ? '☀️' : '🌙'}
-            </button>
+            <ThemeToggle />
           </div>
         </div>
       </header>
@@ -210,7 +182,7 @@ export default function ReadingPage({ params }: ReadingPageProps) {
           </header>
 
           <div 
-            className="prose prose-lg max-w-none dark:prose-invert prose-gray"
+            className="reading-content"
             dangerouslySetInnerHTML={{ __html: article.cleanedHTML }}
           />
         </article>
