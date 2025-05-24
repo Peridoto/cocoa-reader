@@ -7,6 +7,7 @@ type ArticleListItem = {
   title: string
   domain: string
   excerpt: string | null
+  textContent: string
   createdAt: Date
   read: boolean
   scroll: number
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
           title: true,
           domain: true,
           excerpt: true,
+          textContent: true,
           createdAt: true,
           read: true,
           scroll: true,
@@ -58,13 +60,14 @@ export async function GET(request: NextRequest) {
 
       console.log(`Found ${allArticles.length} total articles before search filter`)
 
-      // Filter by search term (case-insensitive, searches title, url, domain, excerpt)
+      // Filter by search term (case-insensitive, searches title, url, domain, excerpt, and full content)
       const searchLower = search.toLowerCase()
       const filteredArticles = allArticles.filter((article: ArticleListItem) => 
         article.title.toLowerCase().includes(searchLower) ||
         article.url.toLowerCase().includes(searchLower) ||
         article.domain.toLowerCase().includes(searchLower) ||
-        (article.excerpt && article.excerpt.toLowerCase().includes(searchLower))
+        (article.excerpt && article.excerpt.toLowerCase().includes(searchLower)) ||
+        article.textContent.toLowerCase().includes(searchLower)
       )
 
       console.log(`Filtered to ${filteredArticles.length} articles matching search: "${search}"`)
@@ -73,7 +76,10 @@ export async function GET(request: NextRequest) {
       
       // Apply pagination to filtered results
       const startIndex = (page - 1) * limit
-      articles = filteredArticles.slice(startIndex, startIndex + limit)
+      const paginatedArticles = filteredArticles.slice(startIndex, startIndex + limit)
+      
+      // Remove textContent from the response to reduce payload size
+      articles = paginatedArticles.map(({ textContent, ...article }) => article)
     } else {
       // No search term - use regular pagination
       total = await prisma.article.count({ where })

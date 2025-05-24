@@ -16,6 +16,7 @@ export default function ReadingPage({ params }: ReadingPageProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [readingProgress, setReadingProgress] = useState(0)
+  const [showAutoReadMessage, setShowAutoReadMessage] = useState(false)
 
   // Debounced function to update scroll progress
   const updateScrollProgress = useCallback(
@@ -23,13 +24,31 @@ export default function ReadingPage({ params }: ReadingPageProps) {
       if (!article) return
       
       try {
-        await fetch(`/api/article/${article.id}`, {
+        // Prepare update data
+        const updateData: { scroll: number; read?: boolean } = { scroll: progress }
+        
+        // Auto-mark as read when reaching 100% progress (if not already read)
+        if (progress >= 100 && !article.read) {
+          updateData.read = true
+        }
+        
+        const response = await fetch(`/api/article/${article.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ scroll: progress }),
+          body: JSON.stringify(updateData),
         })
+        
+        // Update local state if the article was marked as read
+        if (response.ok && updateData.read) {
+          const updatedArticle = await response.json()
+          setArticle(updatedArticle)
+          
+          // Show auto-read message
+          setShowAutoReadMessage(true)
+          setTimeout(() => setShowAutoReadMessage(false), 3000)
+        }
       } catch (error) {
         console.error('Error updating scroll progress:', error)
       }
@@ -121,6 +140,18 @@ export default function ReadingPage({ params }: ReadingPageProps) {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
+      {/* Auto-read notification */}
+      {showAutoReadMessage && (
+        <div className="fixed top-6 right-6 z-50 transition-all duration-300 ease-in-out transform">
+          <div className="bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Article automatically marked as read!
+          </div>
+        </div>
+      )}
+
       {/* Progress bar */}
       <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 z-50">
         <div
