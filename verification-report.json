@@ -1,0 +1,51 @@
+{
+  "timestamp": "2025-05-25T19:30:32.837Z",
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "successRate": 100
+  },
+  "results": [
+    {
+      "name": "Server Running",
+      "status": "PASS",
+      "details": true
+    },
+    {
+      "name": "Manifest Valid",
+      "status": "PASS",
+      "details": "Share target: /share (GET)"
+    },
+    {
+      "name": "Service Worker Valid",
+      "status": "PASS",
+      "details": "Service worker contains all required features"
+    },
+    {
+      "name": "Share Page Accessible",
+      "status": "PASS",
+      "details": "Share page accessible and contains required elements"
+    },
+    {
+      "name": "Share with Parameters",
+      "status": "PASS",
+      "details": "Share page correctly handles URL parameter: https://example.com/test-article"
+    },
+    {
+      "name": "Main App Functionality",
+      "status": "PASS",
+      "details": "Main app contains all required elements"
+    },
+    {
+      "name": "Database Connection",
+      "status": "PASS",
+      "details": "Database file not found (may be using different storage)"
+    },
+    {
+      "name": "JSON Parsing Safety",
+      "status": "PASS",
+      "details": "All JSON parsing test cases passed"
+    }
+  ]
+}

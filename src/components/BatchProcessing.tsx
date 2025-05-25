@@ -2,12 +2,15 @@ import { useState } from 'react'
 import { SparklesIcon, CpuChipIcon } from '@heroicons/react/24/outline'
 import { localDB } from '@/lib/local-database'
 import { clientAI } from '@/lib/client-ai'
+import { Article } from '@/types/article'
 
 interface BatchProcessingProps {
+  articles: Article[]
+  onArticlesUpdated: (articles: Article[]) => void
   onComplete?: () => void
 }
 
-export function BatchProcessing({ onComplete }: BatchProcessingProps) {
+export function BatchProcessing({ articles, onArticlesUpdated, onComplete }: BatchProcessingProps) {
   const [processing, setProcessing] = useState(false)
   const [results, setResults] = useState<{
     processed: number
@@ -24,11 +27,8 @@ export function BatchProcessing({ onComplete }: BatchProcessingProps) {
     setResults(null)
 
     try {
-      // Get all articles from local database
-      const allArticles = await localDB.getAllArticles()
-      
       // Filter articles that need processing (no summary or key points)
-      const unprocessedArticles = allArticles.filter(article => 
+      const unprocessedArticles = articles.filter(article => 
         !article.summary || !article.keyPoints || article.summary === '' || article.keyPoints === ''
       )
 
@@ -42,11 +42,19 @@ export function BatchProcessing({ onComplete }: BatchProcessingProps) {
       
       let processedCount = 0
       let failedCount = 0
+      const updatedArticles = [...articles]
 
-      // Save processed articles back to database
+      // Save processed articles back to database and update local state
       for (const article of processedArticles) {
         try {
           await localDB.saveArticle(article)
+          
+          // Update the article in the local articles array
+          const index = updatedArticles.findIndex(a => a.id === article.id)
+          if (index !== -1) {
+            updatedArticles[index] = article
+          }
+          
           processedCount++
         } catch (error) {
           console.error('Failed to save processed article:', error)
@@ -61,6 +69,8 @@ export function BatchProcessing({ onComplete }: BatchProcessingProps) {
       })
 
       if (processedCount > 0) {
+        // Update the parent component's articles state
+        onArticlesUpdated(updatedArticles)
         onComplete?.()
       }
     } catch (err) {

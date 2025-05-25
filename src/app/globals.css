@@ -186,3 +186,39 @@ body {
   padding: 0;
   color: inherit;
 }
+
+/* PWA Installation Banner Styles */
+.pwa-install-banner {
+  animation: slideInFromBottom 0.3s ease-out;
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Ensure content doesn't hide behind the banner */
+body.has-install-banner {
+  padding-bottom: 120px;
+}
+
+@media (max-width: 640px) {
+  body.has-install-banner {
+    padding-bottom: 140px;
+  }
+}
+
+/* Smooth transitions for banner interactions */
+.pwa-install-banner button {
+  transition: all 0.2s ease-in-out;
+}
+
+.pwa-install-banner button:hover {
+  transform: translateY(-1px);
+}

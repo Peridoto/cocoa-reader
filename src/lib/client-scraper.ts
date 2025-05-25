@@ -3,87 +3,195 @@ import { Article } from '@/types/article'
 // Client-side article scraper using CORS proxy
 export class ClientScraper {
   private corsProxies = [
-    // More reliable CORS proxies
+    // Most reliable iOS-compatible CORS proxies
     'https://api.allorigins.win/get?url=',
+    'https://corsproxy.io/?',
     'https://thingproxy.freeboard.io/fetch/',
+    // Additional iOS-friendly proxies
     'https://cors-proxy.htmldriven.com/?url=',
     'https://crossorigin.me/',
     'https://cors.eu.org/',
     // Backup options
-    'https://corsproxy.io/?',
     'https://cors-anywhere.herokuapp.com/',
   ]
+
+  private isIOSPWA(): boolean {
+    const userAgent = navigator.userAgent || ''
+    const standalone = (window.navigator as any).standalone
+    return (
+      /iPad|iPhone|iPod/.test(userAgent) && 
+      (standalone === true || window.matchMedia('(display-mode: standalone)').matches)
+    )
+  }
+
+  private async tryDirectFetch(url: string): Promise<string | null> {
+    try {
+      // Attempt direct fetch first - might work for some URLs
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'User-Agent': 'Mozilla/5.0 (compatible; CocoaReader/1.0)',
+        },
+        signal: AbortSignal.timeout(8000)
+      })
+      
+      if (response.ok) {
+        const content = await response.text()
+        if (content && content.length > 100) {
+          console.log('Direct fetch successful')
+          return content
+        }
+      }
+    } catch (error) {
+      console.log('Direct fetch failed:', error instanceof Error ? error.message : error)
+    }
+    return null
+  }
 
   async scrapeArticle(url: string): Promise<Partial<Article>> {
     // Normalize URL
     const normalizedUrl = this.normalizeUrl(url)
+    const isIOSPWA = this.isIOSPWA()
     
     let htmlContent = ''
     let lastError: Error | null = null
 
-    // Try different CORS proxies
-    for (let i = 0; i < this.corsProxies.length; i++) {
-      const proxy = this.corsProxies[i]
-      console.log(`Trying proxy ${i + 1}/${this.corsProxies.length}: ${proxy}`)
+    console.log(`Scraping article: ${normalizedUrl}`)
+    if (isIOSPWA) {
+      console.log('iOS PWA detected - using enhanced extraction methods')
+    }
+
+    // iOS PWA: Try direct fetch first
+    if (isIOSPWA) {
+      const directContent = await this.tryDirectFetch(normalizedUrl)
+      if (directContent) {
+        htmlContent = directContent
+      }
+    }
+
+    // If direct fetch failed or not iOS, try CORS proxies
+    if (!htmlContent) {
+      const proxiesToTry = isIOSPWA ? this.corsProxies.slice(0, 3) : this.corsProxies // Limit for iOS
       
-      try {
-        const proxyUrl = proxy + encodeURIComponent(normalizedUrl)
-        const response = await fetch(proxyUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'User-Agent': 'Mozilla/5.0 (compatible; CocoaReader/1.0)',
-          },
-          // Add timeout
-          signal: AbortSignal.timeout(10000) // 10 second timeout
-        })
+      for (let i = 0; i < proxiesToTry.length; i++) {
+        const proxy = proxiesToTry[i]
+        console.log(`Trying proxy ${i + 1}/${proxiesToTry.length}: ${proxy}`)
         
-        if (response.ok) {
-          const data = await response.text()
+        try {
+          const proxyUrl = proxy + encodeURIComponent(normalizedUrl)
+          const response = await fetch(proxyUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'User-Agent': 'Mozilla/5.0 (compatible; CocoaReader/1.0)',
+            },
+            // Shorter timeout for iOS
+            signal: AbortSignal.timeout(isIOSPWA ? 8000 : 10000)
+          })
           
-          // Handle different proxy response formats
-          if (proxy.includes('allorigins')) {
-            try {
-              const jsonData = JSON.parse(data)
-              htmlContent = jsonData.contents
-            } catch (parseError) {
-              console.warn('Failed to parse allorigins response:', parseError)
-              continue
+          if (response.ok) {
+            const data = await response.text()
+            
+            // Handle different proxy response formats
+            if (proxy.includes('allorigins')) {
+              try {
+                const jsonData = JSON.parse(data)
+                htmlContent = jsonData.contents
+              } catch (parseError) {
+                console.warn('Failed to parse allorigins response:', parseError)
+                continue
+              }
+            } else {
+              htmlContent = data
+            }
+            
+            if (htmlContent && htmlContent.length > 100) {
+              console.log(`Success with proxy: ${proxy}`)
+              break
             }
           } else {
-            htmlContent = data
+            console.warn(`Proxy ${proxy} returned status ${response.status}`)
           }
-          
-          if (htmlContent && htmlContent.length > 100) {
-            console.log(`Success with proxy: ${proxy}`)
-            break
-          }
-        } else {
-          console.warn(`Proxy ${proxy} returned status ${response.status}`)
+        } catch (err) {
+          lastError = err as Error
+          console.warn(`Proxy ${proxy} failed:`, err instanceof Error ? err.message : err)
+          continue
         }
-      } catch (err) {
-        lastError = err as Error
-        console.warn(`Proxy ${proxy} failed:`, err instanceof Error ? err.message : err)
-        continue
       }
     }
 
     if (!htmlContent) {
-      // Fallback: create a basic article with the URL
-      console.warn('All proxies failed, creating basic article entry')
-      return {
-        url: normalizedUrl,
-        title: this.extractTitleFromUrl(normalizedUrl),
-        domain: new URL(normalizedUrl).hostname,
-        excerpt: 'Article content could not be fetched. Click to visit the original URL.',
-        cleanedHTML: `<p>Unable to fetch content from <a href="${normalizedUrl}" target="_blank">${normalizedUrl}</a></p>`,
-        textContent: 'Content not available',
-        readingTime: 1
-      }
+      // Enhanced fallback for iOS PWA - try to extract readable content from URL
+      console.warn('All extraction methods failed, creating enhanced fallback article')
+      const enhancedFallback = await this.createEnhancedFallback(normalizedUrl)
+      return enhancedFallback
     }
 
     // Parse HTML and extract content
     return this.extractArticleContent(htmlContent, normalizedUrl)
+  }
+
+  private async createEnhancedFallback(url: string): Promise<Partial<Article>> {
+    try {
+      const urlObj = new URL(url)
+      const domain = urlObj.hostname
+      const path = urlObj.pathname
+      
+      // Try to extract meaningful title from URL structure
+      let title = this.extractTitleFromUrl(url)
+      
+      // Generate more meaningful content based on URL
+      let excerpt = `This article from ${domain} could not be fully loaded due to network restrictions in PWA mode.`
+      let textContent = `Article from ${domain}\n\nThe full content of this article could not be extracted due to cross-origin restrictions. This is common in PWA mode on iOS devices.\n\nTo read the complete article, please visit the original URL.`
+      
+      // Try to infer content type from URL patterns
+      if (path.includes('/blog/') || path.includes('/post/') || path.includes('/article/')) {
+        textContent += `\n\nThis appears to be a blog post or article.`
+      } else if (path.includes('/news/')) {
+        textContent += `\n\nThis appears to be a news article.`
+      } else if (path.includes('/docs/') || path.includes('/documentation/')) {
+        textContent += `\n\nThis appears to be documentation.`
+      }
+      
+      return {
+        url,
+        title,
+        domain,
+        excerpt,
+        cleanedHTML: `
+          <div class="fallback-content">
+            <h2>${title}</h2>
+            <p class="domain-info">Source: <a href="${url}" target="_blank">${domain}</a></p>
+            <p>${excerpt}</p>
+            <div class="content-placeholder">
+              <p>The full content could not be extracted due to cross-origin restrictions in PWA mode.</p>
+              <p><strong>This is a limitation of iOS Safari PWA security policies.</strong></p>
+              <p>To read the complete article, please:</p>
+              <ol>
+                <li>Click the link above to visit the original article</li>
+                <li>Or try adding the article again when connected to WiFi</li>
+                <li>Some content may be available if you refresh the page</li>
+              </ol>
+            </div>
+          </div>
+        `,
+        textContent,
+        readingTime: 1
+      }
+    } catch (error) {
+      // Absolute fallback
+      return {
+        url,
+        title: 'Article Link',
+        domain: 'unknown',
+        excerpt: 'Article link saved for later access.',
+        cleanedHTML: `<p>Article saved: <a href="${url}" target="_blank">${url}</a></p>`,
+        textContent: 'Article link saved for offline access.',
+        readingTime: 1
+      }
+    }
   }
 
   private normalizeUrl(url: string): string {

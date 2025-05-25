@@ -8,10 +8,13 @@ import { clientAI } from '@/lib/client-ai'
 
 interface AddArticleFormProps {
   onArticleAdded: (article: Article) => void
+  onSuccess?: () => void
+  onCancel?: () => void
+  prefilledUrl?: string
 }
 
-export function AddArticleForm({ onArticleAdded }: AddArticleFormProps) {
-  const [url, setUrl] = useState('')
+export function AddArticleForm({ onArticleAdded, onSuccess, onCancel, prefilledUrl }: AddArticleFormProps) {
+  const [url, setUrl] = useState(prefilledUrl || '')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -57,7 +60,11 @@ export function AddArticleForm({ onArticleAdded }: AddArticleFormProps) {
       }
 
       onArticleAdded(article)
-      setUrl('')
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        setUrl('')
+      }
     } catch (error) {
       console.error('Error adding article:', error)
       setError(error instanceof Error ? error.message : 'Failed to add article')
@@ -85,6 +92,16 @@ export function AddArticleForm({ onArticleAdded }: AddArticleFormProps) {
         >
           {loading ? 'Saving...' : 'Save Article'}
         </button>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Cancel
+          </button>
+        )}
       </div>
       
       {showPreview && (
