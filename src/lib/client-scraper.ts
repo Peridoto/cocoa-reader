@@ -138,21 +138,22 @@ export class ClientScraper {
       const urlObj = new URL(url)
       const domain = urlObj.hostname
       const path = urlObj.pathname
+      const isIOSPWA = this.isIOSPWA()
       
       // Try to extract meaningful title from URL structure
       let title = this.extractTitleFromUrl(url)
       
-      // Generate more meaningful content based on URL
-      let excerpt = `This article from ${domain} could not be fully loaded due to network restrictions in PWA mode.`
-      let textContent = `Article from ${domain}\n\nThe full content of this article could not be extracted due to cross-origin restrictions. This is common in PWA mode on iOS devices.\n\nTo read the complete article, please visit the original URL.`
+      // Intelligent content generation based on URL patterns
+      const contentInfo = this.generateIntelligentContent(url, domain, path)
       
-      // Try to infer content type from URL patterns
-      if (path.includes('/blog/') || path.includes('/post/') || path.includes('/article/')) {
-        textContent += `\n\nThis appears to be a blog post or article.`
-      } else if (path.includes('/news/')) {
-        textContent += `\n\nThis appears to be a news article.`
-      } else if (path.includes('/docs/') || path.includes('/documentation/')) {
-        textContent += `\n\nThis appears to be documentation.`
+      // Create meaningful excerpt and content
+      let excerpt = contentInfo.excerpt
+      let textContent = contentInfo.textContent
+      let cleanedHTML = contentInfo.html
+      
+      // Add iOS PWA specific guidance only if actually in iOS PWA mode
+      if (isIOSPWA) {
+        textContent += `\n\nNote: Content extraction is limited in iOS PWA mode due to security restrictions.`
       }
       
       return {
@@ -160,37 +161,221 @@ export class ClientScraper {
         title,
         domain,
         excerpt,
-        cleanedHTML: `
-          <div class="fallback-content">
-            <h2>${title}</h2>
-            <p class="domain-info">Source: <a href="${url}" target="_blank">${domain}</a></p>
-            <p>${excerpt}</p>
-            <div class="content-placeholder">
-              <p>The full content could not be extracted due to cross-origin restrictions in PWA mode.</p>
-              <p><strong>This is a limitation of iOS Safari PWA security policies.</strong></p>
-              <p>To read the complete article, please:</p>
-              <ol>
-                <li>Click the link above to visit the original article</li>
-                <li>Or try adding the article again when connected to WiFi</li>
-                <li>Some content may be available if you refresh the page</li>
-              </ol>
-            </div>
-          </div>
-        `,
+        cleanedHTML,
         textContent,
-        readingTime: 1
+        readingTime: contentInfo.estimatedReadingTime
       }
     } catch (error) {
       // Absolute fallback
       return {
         url,
-        title: 'Article Link',
+        title: 'Saved Article',
         domain: 'unknown',
-        excerpt: 'Article link saved for later access.',
-        cleanedHTML: `<p>Article saved: <a href="${url}" target="_blank">${url}</a></p>`,
+        excerpt: 'Article link saved for later reading.',
+        cleanedHTML: `<div><h2>Saved Article</h2><p>Link: <a href="${url}" target="_blank">${url}</a></p></div>`,
         textContent: 'Article link saved for offline access.',
         readingTime: 1
       }
+    }
+  }
+
+  private generateIntelligentContent(url: string, domain: string, path: string): {
+    excerpt: string;
+    textContent: string;
+    html: string;
+    estimatedReadingTime: number;
+  } {
+    // Analyze URL patterns to provide intelligent content
+    const patterns = this.analyzeUrlPatterns(url, domain, path)
+    
+    let content = ''
+    let contentType = 'article'
+    let estimatedReadingTime = 3
+    
+    // GitHub repository or file
+    if (domain.includes('github.com')) {
+      const pathParts = path.split('/').filter(p => p)
+      if (pathParts.length >= 2) {
+        const owner = pathParts[0]
+        const repo = pathParts[1]
+        
+        if (pathParts.includes('blob') || pathParts.includes('tree')) {
+          // It's a file or directory
+          const fileName = pathParts[pathParts.length - 1]
+          content = `GitHub Repository: ${owner}/${repo}\n\nFile: ${fileName}\n\nThis appears to be source code or documentation from the ${repo} repository by ${owner}. The file contains development resources that may include code examples, documentation, or project information.`
+          contentType = 'code repository'
+        } else if (pathParts.includes('issues')) {
+          content = `GitHub Issue in ${owner}/${repo}\n\nThis is a GitHub issue or discussion thread containing development-related conversations, bug reports, or feature requests.`
+          contentType = 'issue tracker'
+        } else if (pathParts.includes('pull')) {
+          content = `GitHub Pull Request in ${owner}/${repo}\n\nThis is a pull request containing code changes and development discussions.`
+          contentType = 'pull request'
+        } else {
+          content = `GitHub Repository: ${owner}/${repo}\n\nThis is a software development repository containing source code, documentation, and project resources.`
+          contentType = 'repository'
+        }
+      }
+    }
+    
+    // Documentation sites
+    else if (patterns.isDocumentation) {
+      content = `Documentation from ${domain}\n\nThis appears to be technical documentation or API reference material. It likely contains detailed information about software usage, implementation guides, or technical specifications.`
+      contentType = 'documentation'
+      estimatedReadingTime = 5
+    }
+    
+    // Blog posts
+    else if (patterns.isBlog) {
+      content = `Blog Post from ${domain}\n\nThis appears to be a blog article or opinion piece. It likely contains insights, tutorials, or commentary on various topics.`
+      contentType = 'blog post'
+      estimatedReadingTime = 4
+    }
+    
+    // News articles
+    else if (patterns.isNews) {
+      content = `News Article from ${domain}\n\nThis appears to be a news article containing current events, reporting, or journalistic content.`
+      contentType = 'news article'
+      estimatedReadingTime = 3
+    }
+    
+    // Research or academic content
+    else if (patterns.isAcademic) {
+      content = `Academic Content from ${domain}\n\nThis appears to be research, academic papers, or scholarly content with in-depth analysis and citations.`
+      contentType = 'academic content'
+      estimatedReadingTime = 8
+    }
+    
+    // Forums or discussions
+    else if (patterns.isForum) {
+      content = `Discussion Thread from ${domain}\n\nThis appears to be a forum discussion or community conversation with multiple participants sharing insights and experiences.`
+      contentType = 'forum discussion'
+      estimatedReadingTime = 3
+    }
+    
+    // Default intelligent content
+    else {
+      const title = this.extractTitleFromUrl(url)
+      content = `Content from ${domain}\n\nBased on the URL structure, this appears to be: "${title}"\n\nThis content source typically provides informative material relevant to its domain and topic area.`
+      estimatedReadingTime = 3
+    }
+    
+    // Add helpful context about the source
+    content += `\n\nSource Domain: ${domain}`
+    content += `\nContent Type: ${contentType}`
+    content += `\nOriginal URL: ${url}`
+    
+    // Add reading recommendation
+    content += `\n\nRecommendation: Visit the original link for the complete content with all images, formatting, and interactive elements.`
+    
+    const excerpt = content.split('\n')[0] + (content.split('\n')[1] ? ' ' + content.split('\n')[1] : '')
+    
+    const html = `
+      <article class="intelligent-fallback">
+        <header>
+          <h1>${this.extractTitleFromUrl(url)}</h1>
+          <div class="source-info">
+            <span class="domain">${domain}</span>
+            <span class="content-type">${contentType}</span>
+          </div>
+        </header>
+        
+        <div class="content-preview">
+          ${content.split('\n').map(paragraph => 
+            paragraph.trim() ? `<p>${paragraph}</p>` : ''
+          ).join('')}
+        </div>
+        
+        <footer class="article-actions">
+          <a href="${url}" target="_blank" class="read-original">
+            📖 Read Original Article
+          </a>
+          <div class="reading-time">
+            ⏱️ Estimated reading time: ${estimatedReadingTime} min
+          </div>
+        </footer>
+      </article>
+    `
+    
+    return {
+      excerpt: excerpt.length > 200 ? excerpt.substring(0, 200) + '...' : excerpt,
+      textContent: content,
+      html: html,
+      estimatedReadingTime
+    }
+  }
+
+  private analyzeUrlPatterns(url: string, domain: string, path: string): {
+    isBlog: boolean;
+    isNews: boolean;
+    isDocumentation: boolean;
+    isAcademic: boolean;
+    isForum: boolean;
+    isCode: boolean;
+  } {
+    const lowerPath = path.toLowerCase()
+    const lowerDomain = domain.toLowerCase()
+    
+    return {
+      isBlog: (
+        lowerPath.includes('/blog/') || 
+        lowerPath.includes('/post/') || 
+        lowerPath.includes('/article/') ||
+        lowerDomain.includes('blog') ||
+        lowerDomain.includes('medium.com') ||
+        lowerDomain.includes('substack.com')
+      ),
+      
+      isNews: (
+        lowerPath.includes('/news/') ||
+        lowerDomain.includes('news') ||
+        lowerDomain.includes('reuters') ||
+        lowerDomain.includes('bbc') ||
+        lowerDomain.includes('cnn') ||
+        lowerDomain.includes('nytimes') ||
+        lowerDomain.includes('guardian') ||
+        lowerDomain.includes('techcrunch') ||
+        lowerDomain.includes('arstechnica')
+      ),
+      
+      isDocumentation: (
+        lowerPath.includes('/docs/') ||
+        lowerPath.includes('/documentation/') ||
+        lowerPath.includes('/api/') ||
+        lowerPath.includes('/guide/') ||
+        lowerPath.includes('/tutorial/') ||
+        lowerDomain.includes('docs') ||
+        lowerDomain.includes('developer') ||
+        lowerDomain.includes('api')
+      ),
+      
+      isAcademic: (
+        lowerPath.includes('/paper/') ||
+        lowerPath.includes('/research/') ||
+        lowerPath.includes('/publication/') ||
+        lowerDomain.includes('arxiv') ||
+        lowerDomain.includes('scholar') ||
+        lowerDomain.includes('researchgate') ||
+        lowerDomain.includes('academia') ||
+        lowerDomain.includes('.edu')
+      ),
+      
+      isForum: (
+        lowerDomain.includes('reddit') ||
+        lowerDomain.includes('stackoverflow') ||
+        lowerDomain.includes('discourse') ||
+        lowerDomain.includes('forum') ||
+        lowerPath.includes('/forum/') ||
+        lowerPath.includes('/discussion/') ||
+        lowerPath.includes('/thread/')
+      ),
+      
+      isCode: (
+        lowerDomain.includes('github') ||
+        lowerDomain.includes('gitlab') ||
+        lowerDomain.includes('bitbucket') ||
+        lowerPath.includes('/src/') ||
+        lowerPath.includes('/code/')
+      )
     }
   }
 
@@ -371,18 +556,64 @@ export class ClientScraper {
     try {
       const urlObj = new URL(url)
       const pathname = urlObj.pathname
+      const domain = urlObj.hostname
       
-      // Remove file extension and convert to readable title
-      const filename = pathname.split('/').pop() || urlObj.hostname
-      const title = filename
-        .replace(/\.[^/.]+$/, '') // Remove extension
-        .replace(/[-_]/g, ' ') // Replace hyphens and underscores with spaces
-        .replace(/\b\w/g, (char) => char.toUpperCase()) // Capitalize first letter of each word
-        .trim()
+      // Special handling for GitHub
+      if (domain.includes('github.com')) {
+        const pathParts = pathname.split('/').filter(p => p)
+        if (pathParts.length >= 2) {
+          const owner = pathParts[0]
+          const repo = pathParts[1]
+          
+          if (pathParts.includes('blob') && pathParts.length > 4) {
+            // It's a file
+            const fileName = pathParts[pathParts.length - 1]
+            return `${fileName} - ${owner}/${repo}`
+          } else if (pathParts.includes('issues') && pathParts.length > 3) {
+            return `Issue #${pathParts[3]} - ${owner}/${repo}`
+          } else if (pathParts.includes('pull') && pathParts.length > 3) {
+            return `Pull Request #${pathParts[3]} - ${owner}/${repo}`
+          } else if (pathParts.length === 2) {
+            return `${owner}/${repo}`
+          } else if (pathParts.length > 2) {
+            return `${pathParts.slice(2).join('/')} - ${owner}/${repo}`
+          }
+        }
+      }
       
-      return title || urlObj.hostname
+      // Extract meaningful part from path
+      const pathParts = pathname.split('/').filter(p => p && p !== 'index.html' && p !== 'index.php')
+      
+      if (pathParts.length > 0) {
+        // Use the last meaningful part of the path
+        const lastPart = pathParts[pathParts.length - 1]
+        
+        // Remove common file extensions
+        const cleanPart = lastPart
+          .replace(/\.(html|htm|php|asp|aspx|jsp)$/i, '')
+          .replace(/\.[^/.]+$/, '') // Remove any remaining extension
+        
+        if (cleanPart && cleanPart.length > 1) {
+          // Convert URL slug to readable title
+          const title = cleanPart
+            .replace(/[-_]/g, ' ') // Replace hyphens and underscores with spaces
+            .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space between camelCase words
+            .replace(/\b\w/g, (char) => char.toUpperCase()) // Capitalize first letter of each word
+            .trim()
+          
+          if (title.length > 3) {
+            return title
+          }
+        }
+      }
+      
+      // Fallback to domain-based title
+      const domainParts = domain.split('.')
+      const mainDomain = domainParts.length > 2 ? domainParts[domainParts.length - 2] : domainParts[0]
+      
+      return mainDomain.charAt(0).toUpperCase() + mainDomain.slice(1) + ' Article'
     } catch {
-      return url
+      return 'Saved Article'
     }
   }
 }

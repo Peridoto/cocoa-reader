@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Article } from '@/types/article'
-import { debounce } from '@/lib/utils'
+import { debounce, normalizeUrl } from '@/lib/utils'
 import { localDB } from '@/lib/local-database'
+import { clientScraper } from '@/lib/client-scraper'
 import { AddArticleForm } from '@/components/AddArticleForm'
 import { ArticleList } from '@/components/ArticleList'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -19,19 +20,18 @@ export default function HomePageContent() {
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [showSettings, setShowSettings] = useState(false)
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [newArticleUrl, setNewArticleUrl] = useState('')
+  const [addingArticle, setAddingArticle] = useState(false)
+  const [addArticleError, setAddArticleError] = useState('')
 
   // Handle shared URLs
   useEffect(() => {
     const sharedUrl = searchParams.get('url')
     const isSharedOffline = searchParams.get('shared') === 'offline'
     
-    if (sharedUrl || isSharedOffline) {
-      setShowAddForm(true)
-      // If there's a shared URL, pre-fill the form
-      if (sharedUrl) {
-        console.log('Shared URL received:', sharedUrl)
-      }
+    if (sharedUrl) {
+      setNewArticleUrl(sharedUrl)
+      console.log('Shared URL received:', sharedUrl)
     }
   }, [searchParams])
 
@@ -170,6 +170,74 @@ export default function HomePageContent() {
     }
   }
 
+  const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewArticleUrl(e.target.value)
+  }
+
+  const handleUrlInputBlur = () => {
+    // Auto-complete URL with https:// if user entered just a domain
+    if (newArticleUrl.trim() && !newArticleUrl.includes('://') && !newArticleUrl.startsWith('//')) {
+      const trimmedUrl = newArticleUrl.trim()
+      // Check if it looks like a domain (contains a dot and no spaces)
+      if (trimmedUrl.includes('.') && !trimmedUrl.includes(' ')) {
+        setNewArticleUrl(`https://${trimmedUrl}`)
+      }
+    }
+  }
+
+  const handleAddArticle = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newArticleUrl.trim() || addingArticle) return
+
+    setAddingArticle(true)
+    setAddArticleError('')
+
+    try {
+      // Auto-complete URL with https:// if needed before processing
+      let urlToProcess = newArticleUrl.trim()
+      if (!urlToProcess.includes('://') && !urlToProcess.startsWith('//')) {
+        if (urlToProcess.includes('.') && !urlToProcess.includes(' ')) {
+          urlToProcess = `https://${urlToProcess}`
+          setNewArticleUrl(urlToProcess)
+        }
+      }
+
+      // Use client-side scraper to extract article content
+      const scrapedArticle = await clientScraper.scrapeArticle(normalizeUrl(urlToProcess))
+      
+      // Create complete article object
+      const article: Article = {
+        id: crypto.randomUUID(),
+        title: scrapedArticle.title || 'Untitled Article',
+        url: scrapedArticle.url || normalizeUrl(urlToProcess),
+        domain: scrapedArticle.domain || new URL(normalizeUrl(urlToProcess)).hostname,
+        excerpt: scrapedArticle.excerpt || '',
+        cleanedHTML: scrapedArticle.cleanedHTML || '',
+        textContent: scrapedArticle.textContent || '',
+        read: false,
+        createdAt: new Date(),
+        scroll: 0,
+        readingTime: scrapedArticle.readingTime || 1,
+        summary: '',
+        keyPoints: '',
+        sentiment: 'neutral'
+      }
+
+      // Save to local database
+      await localDB.saveArticle(article)
+      setArticles(prev => [article, ...prev])
+      
+      // Clear the input
+      setNewArticleUrl('')
+      
+    } catch (error) {
+      console.error('Failed to add article:', error)
+      setAddArticleError(error instanceof Error ? error.message : 'Failed to add article. Please check the URL and try again.')
+    } finally {
+      setAddingArticle(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -209,35 +277,43 @@ export default function HomePageContent() {
             </div>
           )}
 
-          {/* Add Article Form */}
+          {/* Add Article Form - Direct Input */}
           <div className="mb-6">
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add New Article
-            </button>
-          </div>
-
-          {/* Add Article Modal */}
-          {showAddForm && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                  Add New Article
-                </h2>
-                <AddArticleForm
-                  onArticleAdded={handleArticleAdded}
-                  onSuccess={() => setShowAddForm(false)}
-                  onCancel={() => setShowAddForm(false)}
-                  prefilledUrl={searchParams.get('url') || undefined}
+            <form onSubmit={handleAddArticle} className="space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={newArticleUrl}
+                  onChange={handleUrlInputChange}
+                  onBlur={handleUrlInputBlur}
+                  placeholder="Enter article URL (e.g., example.com or https://example.com)..."
+                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  disabled={addingArticle}
                 />
+                <button
+                  type="submit"
+                  disabled={!newArticleUrl.trim() || addingArticle}
+                  className="px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center min-w-[100px]"
+                >
+                  {addingArticle ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Save
+                    </>
+                  )}
+                </button>
               </div>
-            </div>
-          )}
+              {addArticleError && (
+                <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                  {addArticleError}
+                </div>
+              )}
+            </form>
+          </div>
 
           {/* Search and Filter */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
