@@ -54,7 +54,6 @@ export async function POST(request: NextRequest) {
         categories: JSON.stringify(result.categories.categories),
         tags: JSON.stringify(result.categories.tags),
         aiProcessed: true,
-        processedAt: new Date(),
       },
     });
 
@@ -123,7 +122,6 @@ export async function GET(request: NextRequest) {
               categories: JSON.stringify(result.categories.categories),
               tags: JSON.stringify(result.categories.tags),
               aiProcessed: true,
-              processedAt: new Date(),
             },
           });
 

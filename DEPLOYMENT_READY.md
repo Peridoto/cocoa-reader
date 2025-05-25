@@ -1,8 +1,24 @@
 # 🎯 FINAL DEPLOYMENT STEPS
 
-## ✅ Database Connection Tested & Working!
+## ⚠️ Database API Key Expired - Quick Fix Needed!
 
-Your Prisma Accelerate database is connected and ready. Follow these steps to deploy:
+Your Prisma Accelerate API key has expired. Choose one of these options to fix it:
+
+### 🔧 **Option 1: Get Fresh Prisma Accelerate API Key**
+
+1. Go to: **https://console.prisma.io/accelerate**
+2. Login and find your project (or create new one)
+3. Copy the new DATABASE_URL with fresh API key
+4. Update in Vercel: **Settings** → **Environment Variables** → Edit `DATABASE_URL`
+
+### 🚀 **Option 2: Use Vercel Postgres (Recommended)**
+
+1. Go to: **https://vercel.com/marketplace**
+2. Search for **"Vercel Postgres"** and click **Add Integration**
+3. Select your Cocoa Reader project
+4. Once added, go to **Storage** tab in your Vercel project
+5. Copy the `POSTGRES_PRISMA_URL` value
+6. Update in Vercel: **Settings** → **Environment Variables** → Edit `DATABASE_URL`
 
 ### 🔧 **Step 1: Add Environment Variables to Vercel**
 
