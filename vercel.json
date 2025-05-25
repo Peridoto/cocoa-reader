@@ -1,6 +1,6 @@
 {
   "functions": {
-    "app/api/**/*.ts": {
+    "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
   },
@@ -9,5 +9,8 @@
       "path": "/api/cleanup",
       "schedule": "0 2 * * *"
     }
-  ]
+  ],
+  "env": {
+    "PRISMA_GENERATE_DATAPROXY": "true"
+  }
 }

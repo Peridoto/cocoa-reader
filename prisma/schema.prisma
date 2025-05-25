@@ -1,4 +1,4 @@
-// This is your Prisma schema file,
+// This is your Prisma schema file for Vercel deployment
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./data/readlater.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Article {
@@ -29,9 +29,10 @@ model Article {
   sentiment       String?  // positive, negative, neutral
   primaryCategory String?  // Main category
   categories      String?  // JSON array of categories
-  tags            String?  // JSON array of tags
-  aiProcessed     Boolean  @default(false) // Whether AI processing is complete
-  processedAt     DateTime? // When AI processing was completed
+  tags           String?  // JSON array of tags
+  lastProcessed  DateTime? // When AI processing was last run
   
-  @@map("articles")
+  @@index([createdAt])
+  @@index([read])
+  @@index([domain])
 }
