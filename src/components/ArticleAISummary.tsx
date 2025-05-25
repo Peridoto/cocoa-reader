@@ -7,10 +7,49 @@ interface ArticleAISummaryProps {
 }
 
 export function ArticleAISummary({ article, showFullSummary = false }: ArticleAISummaryProps) {
-  // Parse JSON fields safely
-  const keyPoints = article.keyPoints ? JSON.parse(article.keyPoints) : []
-  const categories = article.categories ? JSON.parse(article.categories) : []
-  const tags = article.tags ? JSON.parse(article.tags) : []
+  // Parse JSON fields safely with error handling
+  const safeJSONParse = (jsonString: string | null | undefined, fieldName: string = 'unknown'): any[] => {
+    if (!jsonString) return []
+    
+    try {
+      // If it's already an array, return it
+      if (Array.isArray(jsonString)) return jsonString
+      
+      // If it's not a string, return empty array
+      if (typeof jsonString !== 'string') {
+        console.warn(`Field ${fieldName} is not a string:`, typeof jsonString, jsonString)
+        return []
+      }
+      
+      const trimmed = jsonString.trim()
+      
+      // If it's an empty string, return empty array
+      if (!trimmed) return []
+      
+      // If it starts with [, try to parse as JSON array
+      if (trimmed.startsWith('[')) {
+        return JSON.parse(trimmed)
+      }
+      
+      // If it starts with {, it's probably an object, return empty array
+      if (trimmed.startsWith('{')) {
+        console.warn(`Field ${fieldName} contains object, expected array:`, trimmed.substring(0, 50))
+        return []
+      }
+      
+      // If it's a plain string, wrap it in an array
+      return [trimmed]
+      
+    } catch (e) {
+      console.warn(`Failed to parse JSON field ${fieldName}:`, jsonString?.substring(0, 50), e)
+      // If parsing fails and it's a string, treat it as a single item
+      return typeof jsonString === 'string' && jsonString.trim() ? [jsonString.trim()] : []
+    }
+  }
+
+  const keyPoints = safeJSONParse(article.keyPoints, 'keyPoints')
+  const categories = safeJSONParse(article.categories, 'categories')
+  const tags = safeJSONParse(article.tags, 'tags')
 
   // Don't render if article hasn't been processed
   if (!article.aiProcessed || !article.summary) {

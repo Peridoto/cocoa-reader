@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Article } from '@/types/article'
 import { debounce } from '@/lib/utils'
+import { localDB } from '@/lib/local-database'
 import { AddArticleForm } from '@/components/AddArticleForm'
 import { ArticleList } from '@/components/ArticleList'
 import { ThemeToggle } from '@/components/ThemeToggle'
@@ -33,20 +34,83 @@ export default function HomePage() {
   const fetchArticles = async () => {
     try {
       setLoading(true)
-      const params = new URLSearchParams()
-      if (filter === 'read') params.set('read', 'true')
-      if (filter === 'unread') params.set('read', 'false')
-      if (debouncedSearchTerm.trim()) params.set('search', debouncedSearchTerm.trim())
+      
+      // Initialize database if needed
+      await localDB.init()
 
-      const response = await fetch(`/api/articles?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setArticles(data.articles)
+      let articles: Article[] = []
+
+      // Get articles from local database
+      if (filter === 'all') {
+        if (debouncedSearchTerm.trim()) {
+          articles = await localDB.searchArticles(debouncedSearchTerm)
+        } else {
+          articles = await localDB.getAllArticles()
+        }
       } else {
-        console.error('Failed to fetch articles:', response.statusText)
+        const readStatus = filter === 'read'
+        articles = await localDB.filterArticles(readStatus)
+        
+        // Apply search filter if needed
+        if (debouncedSearchTerm.trim()) {
+          articles = articles.filter(article => 
+            article.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+            article.textContent.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+            article.domain.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+            (article.summary && article.summary.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
+          )
+        }
       }
+
+      // If no articles in database, add demo articles for first-time users
+      if (articles.length === 0 && filter === 'all' && !debouncedSearchTerm.trim()) {
+        const demoArticles: Article[] = [
+          {
+            id: 'demo-1',
+            title: 'Welcome to Cocoa Reader PWA',
+            url: 'https://example.com/welcome',
+            domain: 'example.com',
+            excerpt: 'Welcome to the full-featured Cocoa Reader PWA! This version has complete offline functionality including article saving, AI processing, and local storage.',
+            cleanedHTML: '<h1>Welcome to Cocoa Reader PWA</h1><p>This is the complete Progressive Web App version of Cocoa Reader. You can now:</p><ul><li>Save articles from any URL</li><li>Process articles with AI offline</li><li>Export and import your data</li><li>Work completely offline</li></ul>',
+            textContent: 'Welcome to Cocoa Reader PWA. This is the complete Progressive Web App version with full offline functionality.',
+            read: false,
+            createdAt: new Date(),
+            scroll: 0,
+            readingTime: 2,
+            summary: 'Introduction to Cocoa Reader PWA with full offline capabilities',
+            keyPoints: 'Offline functionality, Article saving, AI processing, Data export/import',
+            sentiment: 'positive'
+          },
+          {
+            id: 'demo-2', 
+            title: 'PWA Features Overview',
+            url: 'https://example.com/pwa-features',
+            domain: 'example.com',
+            excerpt: 'Learn about all the powerful features available in this Progressive Web App version of Cocoa Reader.',
+            cleanedHTML: '<h1>PWA Features</h1><p>This PWA version includes:</p><ul><li>Local IndexedDB storage</li><li>Client-side article scraping</li><li>Offline AI processing</li><li>Service worker caching</li><li>Export/import functionality</li></ul>',
+            textContent: 'PWA Features. This PWA version includes local storage, article scraping, AI processing, and more.',
+            read: true,
+            createdAt: new Date(Date.now() - 86400000),
+            scroll: 75,
+            readingTime: 3,
+            summary: 'Overview of Progressive Web App features and capabilities',
+            keyPoints: 'Local storage, Article scraping, AI processing, Service worker, Export/import',
+            sentiment: 'positive'
+          }
+        ]
+
+        // Save demo articles to database
+        for (const article of demoArticles) {
+          await localDB.saveArticle(article)
+        }
+        articles = demoArticles
+      }
+
+      setArticles(articles)
     } catch (error) {
       console.error('Error fetching articles:', error)
+      // Fallback to empty state
+      setArticles([])
     } finally {
       setLoading(false)
     }
@@ -56,20 +120,38 @@ export default function HomePage() {
     fetchArticles()
   }, [filter, debouncedSearchTerm])
 
-  const handleArticleAdded = (newArticle: Article) => {
-    setArticles(prev => [newArticle, ...prev])
+  const handleArticleAdded = async (newArticle: Article) => {
+    try {
+      // Save to local database
+      await localDB.saveArticle(newArticle)
+      setArticles(prev => [newArticle, ...prev])
+    } catch (error) {
+      console.error('Failed to save article:', error)
+    }
   }
 
-  const handleArticleUpdated = (updatedArticle: Article) => {
-    setArticles(prev => 
-      prev.map(article => 
-        article.id === updatedArticle.id ? updatedArticle : article
+  const handleArticleUpdated = async (updatedArticle: Article) => {
+    try {
+      // Update in local database
+      await localDB.updateArticle(updatedArticle.id, updatedArticle)
+      setArticles(prev => 
+        prev.map(article => 
+          article.id === updatedArticle.id ? updatedArticle : article
+        )
       )
-    )
+    } catch (error) {
+      console.error('Failed to update article:', error)
+    }
   }
 
-  const handleArticleDeleted = (articleId: string) => {
-    setArticles(prev => prev.filter(article => article.id !== articleId))
+  const handleArticleDeleted = async (articleId: string) => {
+    try {
+      // Delete from local database
+      await localDB.deleteArticle(articleId)
+      setArticles(prev => prev.filter(article => article.id !== articleId))
+    } catch (error) {
+      console.error('Failed to delete article:', error)
+    }
   }
 
   return (

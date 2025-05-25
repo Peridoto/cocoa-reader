@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { SparklesIcon, CpuChipIcon } from '@heroicons/react/24/outline'
+import { localDB } from '@/lib/local-database'
+import { clientAI } from '@/lib/client-ai'
 
 interface BatchProcessingProps {
   onComplete?: () => void
@@ -22,24 +24,43 @@ export function BatchProcessing({ onComplete }: BatchProcessingProps) {
     setResults(null)
 
     try {
-      const response = await fetch('/api/articles/process-v2?batchSize=20', {
-        method: 'GET',
-      })
+      // Get all articles from local database
+      const allArticles = await localDB.getAllArticles()
+      
+      // Filter articles that need processing (no summary or key points)
+      const unprocessedArticles = allArticles.filter(article => 
+        !article.summary || !article.keyPoints || article.summary === '' || article.keyPoints === ''
+      )
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to process articles')
+      if (unprocessedArticles.length === 0) {
+        setResults({ processed: 0, failed: 0, total: 0 })
+        return
       }
 
-      const result = await response.json()
+      // Process articles with client-side AI
+      const processedArticles = await clientAI.batchProcess(unprocessedArticles)
       
+      let processedCount = 0
+      let failedCount = 0
+
+      // Save processed articles back to database
+      for (const article of processedArticles) {
+        try {
+          await localDB.saveArticle(article)
+          processedCount++
+        } catch (error) {
+          console.error('Failed to save processed article:', error)
+          failedCount++
+        }
+      }
+
       setResults({
-        processed: result.processed || 0,
-        failed: result.failed || 0,
-        total: (result.processed || 0) + (result.failed || 0)
+        processed: processedCount,
+        failed: failedCount,
+        total: unprocessedArticles.length
       })
 
-      if (result.processed > 0) {
+      if (processedCount > 0) {
         onComplete?.()
       }
     } catch (err) {

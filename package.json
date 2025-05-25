@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:static": "npm run build:static:setup && next build && npm run build:static:cleanup",
+    "build:static:setup": "cp next.config.static.js next.config.js && cp src/app/page-static.tsx src/app/page.tsx && mv src/app/api src/api-backup && mv src/app/read src/read-backup",
+    "build:static:cleanup": "cp src/app/page-dynamic.tsx.bak src/app/page.tsx && mv src/api-backup src/app/api && mv src/read-backup src/app/read",
+    "build:server": "next build",
     "start": "next start",
+    "export": "next export",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",

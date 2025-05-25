@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { localDB } from '@/lib/local-database'
 import { 
   downloadFile, 
   generateExportFilename, 
@@ -32,19 +33,14 @@ export function ExportImport({ onImportComplete }: ExportImportProps) {
       setIsExporting(true)
       setError('')
       
-      const response = await fetch('/api/export')
-      
-      if (!response.ok) {
-        throw new Error('Failed to export articles')
-      }
-      
-      const exportData = await response.json()
-      const jsonString = JSON.stringify(exportData, null, 2)
+      // Export directly from local database
+      const exportData = await localDB.exportData()
       const filename = generateExportFilename()
       
-      downloadFile(jsonString, filename)
+      downloadFile(exportData, filename)
       
-      setImportProgress(`Successfully exported ${exportData.totalArticles} articles`)
+      const articles = await localDB.getAllArticles()
+      setImportProgress(`Successfully exported ${articles.length} articles`)
       setTimeout(() => setImportProgress(''), 3000)
       
     } catch (err) {
@@ -72,31 +68,27 @@ export function ExportImport({ onImportComplete }: ExportImportProps) {
       
       setImportProgress('Validating data...')
       
-      // Validate the file content before sending to API
+      // Validate the file content before importing
       const importData = parseImportData(fileContent)
       
       setImportProgress(`Importing ${importData.totalArticles} articles...`)
       
-      const response = await fetch('/api/import', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: fileContent,
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Import failed')
+      // Import directly to local database
+      const importedCount = await localDB.importData(fileContent)
+      
+      const stats: ImportStats = {
+        totalInFile: importData.totalArticles,
+        imported: importedCount,
+        skipped: 0,
+        errors: importData.totalArticles - importedCount
       }
 
-      setImportStats(result.stats)
+      setImportStats(stats)
       setImportProgress('')
       
       // Call the callback to refresh the articles list
-      if (onImportComplete && result.stats) {
-        onImportComplete(result.stats)
+      if (onImportComplete) {
+        onImportComplete(stats)
       }
 
     } catch (err) {

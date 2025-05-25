@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Generator</title>
+</head>
+<body>
+    <h1>PWA Icon Generator</h1>
+    <p>This page will generate PNG icons from SVG. Open browser developer tools to see the generated data URLs.</p>
+    
+    <canvas id="canvas192" width="192" height="192" style="border: 1px solid #ccc; margin: 10px;"></canvas>
+    <canvas id="canvas512" width="512" height="512" style="border: 1px solid #ccc; margin: 10px;"></canvas>
+    
+    <div id="output"></div>
+
+    <script>
+        function generateIcon(size) {
+            const canvas = document.getElementById(`canvas${size}`);
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Background with rounded corners
+            const radius = size * 0.125; // 12.5% radius for rounded corners
+            ctx.fillStyle = '#1f2937'; // Dark gray
+            ctx.beginPath();
+            ctx.roundRect(0, 0, size, size, radius);
+            ctx.fill();
+            
+            // Coconut emoji
+            ctx.font = `${size * 0.4}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = 'white';
+            ctx.fillText('🥥', size/2, size/2);
+            
+            // Generate data URL
+            const dataURL = canvas.toDataURL('image/png');
+            console.log(`Icon ${size}x${size} data URL:`, dataURL);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = dataURL;
+            link.textContent = `Download ${size}x${size} PNG`;
+            link.style.display = 'block';
+            link.style.margin = '10px 0';
+            document.getElementById('output').appendChild(link);
+            
+            return dataURL;
+        }
+        
+        // Support for roundRect if not available
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+                this.moveTo(x + radius, y);
+                this.lineTo(x + width - radius, y);
+                this.quadraticCurveTo(x + width, y, x + width, y + radius);
+                this.lineTo(x + width, y + height - radius);
+                this.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                this.lineTo(x + radius, y + height);
+                this.quadraticCurveTo(x, y + height, x, y + height - radius);
+                this.lineTo(x, y + radius);
+                this.quadraticCurveTo(x, y, x + radius, y);
+                this.closePath();
+            };
+        }
+        
+        // Generate both icons
+        generateIcon(192);
+        generateIcon(512);
+    </script>
+</body>
+</html>

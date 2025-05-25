@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { SparklesIcon } from '@heroicons/react/24/outline'
+import { localDB } from '@/lib/local-database'
+import { clientAI } from '@/lib/client-ai'
 
 interface AIProcessButtonProps {
   articleId: string
@@ -24,25 +26,25 @@ export function AIProcessButton({
     setError(null)
 
     try {
-      const response = await fetch('/api/articles/process-v2', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ articleId }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to process article')
+      // Get the current article from local database
+      const article = await localDB.getArticle(articleId)
+      if (!article) {
+        throw new Error('Article not found')
       }
 
-      const result = await response.json()
+      // Process with client-side AI
+      const aiResults = await clientAI.processArticle(article)
       
-      if (result.success) {
+      // Update article with AI results
+      const updatedArticle = await localDB.updateArticle(articleId, {
+        ...aiResults,
+        aiProcessed: true
+      })
+
+      if (updatedArticle) {
         onProcessComplete?.()
       } else {
-        throw new Error(result.error || 'Processing failed')
+        throw new Error('Failed to update article with AI results')
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error'

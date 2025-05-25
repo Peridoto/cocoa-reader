@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Article } from '@/types/article'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { calculateReadingProgress, debounce } from '@/lib/utils'
+import { localDB } from '@/lib/local-database'
 import { ArticleAISummary } from '@/components/ArticleAISummary'
 import { AIProcessButton } from '@/components/AIProcessButton'
 
@@ -34,17 +35,11 @@ export default function ReadingPage({ params }: ReadingPageProps) {
           updateData.read = true
         }
         
-        const response = await fetch(`/api/article/${article.id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(updateData),
-        })
+        // Update article in local database
+        const updatedArticle = await localDB.updateArticle(article.id, updateData)
         
         // Update local state if the article was marked as read
-        if (response.ok && updateData.read) {
-          const updatedArticle = await response.json()
+        if (updateData.read && updatedArticle) {
           setArticle(updatedArticle)
           
           // Show auto-read message
@@ -78,11 +73,10 @@ export default function ReadingPage({ params }: ReadingPageProps) {
   useEffect(() => {
     const fetchArticle = async () => {
       try {
-        const response = await fetch(`/api/article/${params.id}`)
-        if (!response.ok) {
+        const articleData = await localDB.getArticle(params.id)
+        if (!articleData) {
           throw new Error('Article not found')
         }
-        const articleData = await response.json()
         setArticle(articleData)
         setReadingProgress(articleData.scroll)
       } catch (err) {
@@ -99,16 +93,8 @@ export default function ReadingPage({ params }: ReadingPageProps) {
     if (!article) return
 
     try {
-      const response = await fetch(`/api/article/${article.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ read: !article.read }),
-      })
-
-      if (response.ok) {
-        const updatedArticle = await response.json()
+      const updatedArticle = await localDB.updateArticle(article.id, { read: !article.read })
+      if (updatedArticle) {
         setArticle(updatedArticle)
       }
     } catch (error) {
@@ -118,9 +104,8 @@ export default function ReadingPage({ params }: ReadingPageProps) {
 
   const handleAIProcessComplete = async () => {
     try {
-      const response = await fetch(`/api/article/${params.id}`)
-      if (response.ok) {
-        const updatedArticle = await response.json()
+      const updatedArticle = await localDB.getArticle(params.id)
+      if (updatedArticle) {
         setArticle(updatedArticle)
       }
     } catch (error) {
@@ -170,7 +155,7 @@ export default function ReadingPage({ params }: ReadingPageProps) {
       <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700 z-50">
         <div
           className="h-full bg-blue-600 transition-all duration-150 ease-out"
-          style={{ width: `${readingProgress}%` }}
+          style={{ width: `${Math.min(100, Math.max(0, readingProgress))}%` }}
         />
       </div>
 

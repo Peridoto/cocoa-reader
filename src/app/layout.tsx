@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { PWAInstaller } from '@/components/PWAInstaller'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -10,15 +10,18 @@ export const metadata: Metadata = {
   title: 'Cocoa Reader - Read Later App',
   description: 'A local read-later application that works completely offline',
   manifest: '/manifest.json',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
-  ],
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'Cocoa Reader',
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
+  ],
 }
 
 export default function RootLayout({
@@ -49,6 +52,24 @@ export default function RootLayout({
                   }
                 }
               })()
+            `,
+          }}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Register service worker for PWA functionality
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('SW registered: ', registration);
+                    })
+                    .catch(function(registrationError) {
+                      console.log('SW registration failed: ', registrationError);
+                    });
+                });
+              }
             `,
           }}
         />

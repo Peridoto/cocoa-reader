@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Article } from '@/types/article'
 import { formatDistanceToNow } from '@/lib/utils'
+import { localDB } from '@/lib/local-database'
 import { ArticleAISummary } from './ArticleAISummary'
 import { AIProcessButton } from './AIProcessButton'
 
@@ -21,18 +22,9 @@ export function ArticleList({
 }: ArticleListProps) {
   const toggleReadStatus = async (article: Article) => {
     try {
-      const response = await fetch(`/api/article/${article.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ read: !article.read }),
-      })
-
-      if (response.ok) {
-        const updatedArticle = await response.json()
-        onArticleUpdated(updatedArticle)
-      }
+      const updatedArticle = { ...article, read: !article.read }
+      await localDB.updateArticle(article.id, { read: !article.read })
+      onArticleUpdated(updatedArticle)
     } catch (error) {
       console.error('Error updating article:', error)
     }
@@ -42,25 +34,19 @@ export function ArticleList({
     if (!confirm('Are you sure you want to delete this article?')) return
 
     try {
-      const response = await fetch(`/api/article/${articleId}`, {
-        method: 'DELETE',
-      })
-
-      if (response.ok) {
-        onArticleDeleted(articleId)
-      }
+      await localDB.deleteArticle(articleId)
+      onArticleDeleted(articleId)
     } catch (error) {
       console.error('Error deleting article:', error)
     }
   }
 
   const handleAIProcessComplete = (articleId: string) => {
-    // Refresh the specific article to show updated AI data
+    // Refresh the specific article from local database to show updated AI data
     const refreshArticle = async () => {
       try {
-        const response = await fetch(`/api/article/${articleId}`)
-        if (response.ok) {
-          const updatedArticle = await response.json()
+        const updatedArticle = await localDB.getArticle(articleId)
+        if (updatedArticle) {
           onArticleUpdated(updatedArticle)
         }
       } catch (error) {

@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { Article } from '@/types/article'
 import { normalizeUrl } from '@/lib/utils'
+import { clientScraper } from '@/lib/client-scraper'
+import { clientAI } from '@/lib/client-ai'
 
 interface AddArticleFormProps {
   onArticleAdded: (article: Article) => void
@@ -25,27 +27,40 @@ export function AddArticleForm({ onArticleAdded }: AddArticleFormProps) {
     setError('')
 
     try {
-      // Normalize URL to add https:// if missing
-      const normalizedUrl = normalizeUrl(url)
+      // Use client-side scraper to extract article content
+      const scrapedArticle = await clientScraper.scrapeArticle(normalizeUrl(url))
       
-      const response = await fetch('/api/article', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: normalizedUrl }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save article')
+      // Create complete article object
+      const article: Article = {
+        id: crypto.randomUUID(),
+        title: scrapedArticle.title || 'Untitled Article',
+        url: scrapedArticle.url || normalizeUrl(url),
+        domain: scrapedArticle.domain || new URL(normalizeUrl(url)).hostname,
+        excerpt: scrapedArticle.excerpt || '',
+        cleanedHTML: scrapedArticle.cleanedHTML || '',
+        textContent: scrapedArticle.textContent || '',
+        read: false,
+        createdAt: new Date(),
+        scroll: 0,
+        readingTime: scrapedArticle.readingTime || 1,
+        summary: '',
+        keyPoints: '',
+        sentiment: 'neutral'
       }
 
-      const article = await response.json()
+      // Process with AI in the background
+      try {
+        const aiProcessed = await clientAI.processArticle(article)
+        Object.assign(article, aiProcessed)
+      } catch (aiError) {
+        console.warn('AI processing failed, article saved without AI data:', aiError)
+      }
+
       onArticleAdded(article)
       setUrl('')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
+    } catch (error) {
+      console.error('Error adding article:', error)
+      setError(error instanceof Error ? error.message : 'Failed to add article')
     } finally {
       setLoading(false)
     }
