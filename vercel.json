@@ -1,7 +1,8 @@
 {
   "functions": {
     "src/app/api/**/*.ts": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "crons": [
@@ -12,5 +13,7 @@
   ],
   "env": {
     "PRISMA_GENERATE_DATAPROXY": "true"
-  }
+  },
+  "regions": ["iad1"],
+  "framework": "nextjs"
 }
