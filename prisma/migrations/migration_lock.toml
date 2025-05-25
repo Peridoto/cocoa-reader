@@ -1,0 +1,14 @@
+{
+  "version": "db323a645b6b013b5810b989b969e6bb",
+  "dialect": "postgresql",
+  "id": "20241201000000_add_ai_processed",
+  "prevId": "00000000000000_init",
+  "tables": {},
+  "schemas": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}

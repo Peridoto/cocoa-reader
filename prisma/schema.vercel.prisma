@@ -30,7 +30,7 @@ model Article {
   primaryCategory String?  // Main category
   categories      String?  // JSON array of categories
   tags           String?  // JSON array of tags
-  aiProcessed    Boolean  @default(false) // Whether AI processing is complete
+  lastProcessed  DateTime? // When AI processing was last run
   
   @@index([createdAt])
   @@index([read])
