@@ -14,20 +14,39 @@ export default function SharePageContent() {
   const [error, setError] = useState('')
   const [urlParam, setUrlParam] = useState<string | null>(null)
 
+  console.log('SharePageContent render - states:', { processing, article: !!article, error, urlParam })
+
   useEffect(() => {
+    console.log('=== SharePageContent useEffect START ===')
+    
     const url = searchParams.get('url')
     const title = searchParams.get('title')
     const text = searchParams.get('text')
 
     console.log('SharePageContent useEffect triggered:', { url, title, text })
+    console.log('All search params:', Object.fromEntries(searchParams.entries()))
+    console.log('Search params keys:', Array.from(searchParams.keys()))
+    console.log('Search params values:', Array.from(searchParams.values()))
+    console.log('Window location search:', typeof window !== 'undefined' ? window.location.search : 'server-side')
+    
     setUrlParam(url) // Store URL param for debugging
 
-    if (url) {
-      console.log('URL found, calling handleSharedUrl:', url)
-      handleSharedUrl(url, title, text)
+    if (url && url.trim()) {
+      console.log('✅ URL found, calling handleSharedUrl:', url)
+      setProcessing(true) // Ensure processing state is set
+      handleSharedUrl(url, title, text).catch(err => {
+        console.error('❌ handleSharedUrl failed:', err)
+        setError(`Failed to process URL: ${err.message}`)
+        setProcessing(false)
+      })
     } else {
-      console.log('No URL found in search params')
+      console.log('❌ No valid URL found in search params')
+      console.log('Available search params keys:', Array.from(searchParams.keys()))
+      console.log('URL value type:', typeof url, 'URL value:', JSON.stringify(url))
+      setProcessing(false)
     }
+    
+    console.log('=== SharePageContent useEffect END ===')
     // If no URL, just show the "No Article to Process" state
   }, [searchParams])
 
