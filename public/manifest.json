@@ -92,6 +92,7 @@
   "scope": "/",
   "id": "cocoa-reader-pwa",
   "prefer_related_applications": false,
+  "iarc_rating_id": "",
   "share_target": {
     "action": "/share",
     "method": "GET",
