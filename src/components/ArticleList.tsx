@@ -95,15 +95,17 @@ export function ArticleList({
               </h2>
               
               <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
-                <span>{article.domain}</span>
+                <a 
+                  href={article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors"
+                  title="Open original article"
+                >
+                  {article.domain}
+                </a>
                 <span>•</span>
                 <span>{formatDistanceToNow(new Date(article.createdAt))} ago</span>
-                {article.read && (
-                  <>
-                    <span>•</span>
-                    <span className="text-green-600 dark:text-green-400">Read</span>
-                  </>
-                )}
                 {article.scroll > 0 && (
                   <>
                     <span>•</span>

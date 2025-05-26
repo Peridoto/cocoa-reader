@@ -12,43 +12,67 @@ export default function SharePageContent() {
   const [processing, setProcessing] = useState(false)
   const [article, setArticle] = useState<Article | null>(null)
   const [error, setError] = useState('')
+  const [urlParam, setUrlParam] = useState<string | null>(null)
 
   useEffect(() => {
     const url = searchParams.get('url')
     const title = searchParams.get('title')
     const text = searchParams.get('text')
 
+    console.log('SharePageContent useEffect triggered:', { url, title, text })
+    setUrlParam(url) // Store URL param for debugging
+
     if (url) {
+      console.log('URL found, calling handleSharedUrl:', url)
       handleSharedUrl(url, title, text)
     } else {
-      // No URL shared, redirect to home
-      router.push('/')
+      console.log('No URL found in search params')
     }
-  }, [searchParams, router])
+    // If no URL, just show the "No Article to Process" state
+  }, [searchParams])
 
   const handleSharedUrl = async (url: string, title?: string | null, text?: string | null) => {
+    console.log('handleSharedUrl called with:', { url, title, text })
     try {
       setProcessing(true)
       setError('')
 
-      // Initialize database
-      await localDB.init()
+      // Initialize database with timeout
+      console.log('Initializing local database...')
+      const initTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database initialization timeout')), 10000)
+      )
+      
+      await Promise.race([localDB.init(), initTimeout])
+      console.log('Database initialized successfully')
 
       // Check if article already exists
+      console.log('Checking for existing articles...')
       const existingArticles = await localDB.getAllArticles()
       const existingArticle = existingArticles.find(article => article.url === url)
 
       if (existingArticle) {
+        console.log('Article already exists:', existingArticle.id)
         setArticle(existingArticle)
         setError('This article is already saved in your library.')
         return
       }
 
+      console.log('Creating scraper instance...')
       // Create scraper instance
       const scraper = new ClientScraper()
 
-      // Scrape the article
-      const scrapedData = await scraper.scrapeArticle(url)
+      console.log('Starting to scrape article:', url)
+      // Scrape the article with timeout
+      const scrapeTimeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Scraping timeout after 30 seconds')), 30000)
+      )
+      
+      const scrapedData = await Promise.race([
+        scraper.scrapeArticle(url),
+        scrapeTimeout
+      ]) as Partial<Article>
+      console.log('Scraping completed, result:', scrapedData)
 
       // Create article object
       const newArticle: Omit<Article, 'id'> = {
@@ -70,10 +94,12 @@ export default function SharePageContent() {
       }
 
       // Save to local database
+      console.log('Saving article to local database...')
       const savedArticle = await localDB.saveArticle({
         ...newArticle,
         id: crypto.randomUUID()
       })
+      console.log('Article saved successfully:', savedArticle.id)
       setArticle(savedArticle)
 
     } catch (error) {
@@ -217,8 +243,15 @@ export default function SharePageContent() {
                 No Article to Process
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                No URL was shared to process.
+                {urlParam ? `Error processing URL: ${urlParam}` : 'No URL was shared to process.'}
               </p>
+              {error && (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    Debug info: {error}
+                  </p>
+                </div>
+              )}
               <button
                 onClick={handleViewLibrary}
                 className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
