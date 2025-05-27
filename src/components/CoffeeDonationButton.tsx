@@ -34,21 +34,30 @@ export function CoffeeDonationButton({ articlesCount, onShake }: CoffeeDonationB
   return (
     <button
       onClick={handleClick}
-      className={`
-        relative p-2 text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 
-        transition-all duration-200 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg
-        ${shouldShake ? 'animate-shake' : ''}
-      `}
+      className={`relative p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors ${shouldShake ? 'animate-shake' : ''}`}
+      aria-label="Buy me a coffee"
       title="Buy me a coffee ☕"
     >
-      {/* Coffee Icon */}
+      {/* Coffee Cup Icon */}
       <svg 
-        className="w-6 h-6" 
-        fill="currentColor" 
+        className="w-5 h-5" 
+        fill="none"
+        stroke="currentColor"
         viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <path d="M2 21h16c1.1 0 2-.9 2-2v-2c0-1.1-.9-2-2-2H2v6zm13.5-9.5c0-.83-.67-1.5-1.5-1.5H4c-.83 0-1.5.67-1.5 1.5S3.17 13 4 13h10c.83 0 1.5-.67 1.5-1.5zM2 5v4h16V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2z"/>
-        <path d="M20 8h-2v4h2c1.1 0 2-.9 2-2s-.9-2-2-2z"/>
+        <path 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          strokeWidth={2} 
+          d="M20 12a8 8 0 11-16 0V6a2 2 0 012-2h12a2 2 0 012 2v6zM6 8h12M8 21l8-4"
+        />
+        <path 
+          strokeLinecap="round" 
+          strokeLinejoin="round" 
+          strokeWidth={2} 
+          d="M19 10a4 4 0 100 8"
+        />
       </svg>
       
       {/* Shake indicator */}
