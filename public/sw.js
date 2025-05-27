@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cocoa-reader-v1';
+const CACHE_NAME = 'coco-reader-v1';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
@@ -132,6 +132,6 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification('Cocoa Reader', options)
+    self.registration.showNotification('Coco Reader', options)
   );
 });

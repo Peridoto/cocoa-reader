@@ -110,7 +110,7 @@ export function ExportImport({ onImportComplete }: ExportImportProps) {
       </h2>
       
       <p className="text-gray-600 dark:text-gray-400 mb-6">
-        Export your articles for backup or import from another Cocoa Reader instance.
+        Export your articles for backup or import from another Coco Reader instance.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -142,7 +142,7 @@ export function ExportImport({ onImportComplete }: ExportImportProps) {
         <div className="space-y-3">
           <h3 className="font-medium text-gray-900 dark:text-white">Import Articles</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Import articles from a Cocoa Reader export file. Duplicates will be skipped.
+            Import articles from a Coco Reader export file. Duplicates will be skipped.
           </p>
           <button
             onClick={handleImportClick}

@@ -30,10 +30,10 @@ export async function POST(request: NextRequest) {
     // Validate the import data
     const importData = ImportDataSchema.parse(body)
     
-    // Check if this is a valid Cocoa Reader export
-    if (importData.metadata.appName !== 'Cocoa Reader') {
+    // Check if this is a valid Coco Reader export
+    if (importData.metadata.appName !== 'Coco Reader') {
       return NextResponse.json(
-        { error: 'Invalid export file: Not a Cocoa Reader export' },
+        { error: 'Invalid export file: Not a Coco Reader export' },
         { status: 400 }
       )
     }

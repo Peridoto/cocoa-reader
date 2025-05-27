@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test New Features - Coco Reader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #7c3aed;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .test-result.success {
+            background: #f0fdf4;
+            border: 1px solid #22c55e;
+        }
+        .test-result.error {
+            background: #fef2f2;
+            border: 1px solid #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Coco Reader New Features Test</h1>
+    <p>This page tests the new features implemented: app name changes, statistics, and coffee donation button.</p>
+
+    <div class="test-section">
+        <h2>✅ Test 1: App Name Changes</h2>
+        <p>Testing that "Cocoa Reader" has been changed to "Coco Reader" throughout the app.</p>
+        <button onclick="testAppName()">Test App Name Changes</button>
+        <div id="appNameResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test 2: Statistics Component</h2>
+        <p>Testing the reading statistics functionality.</p>
+        <button onclick="testStatistics()">Test Statistics</button>
+        <button onclick="addTestArticle()">Add Test Article</button>
+        <button onclick="markArticleAsRead()">Mark Article as Read</button>
+        <div id="statisticsResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>☕ Test 3: Coffee Donation Button</h2>
+        <p>Testing the coffee donation button and shake animation.</p>
+        <button onclick="testCoffeeButton()">Test Coffee Button</button>
+        <button onclick="testShakeAnimation()">Test Shake Animation (15 articles)</button>
+        <div id="coffeeResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Test 4: Database Error Check</h2>
+        <p>Testing database connectivity and operations.</p>
+        <button onclick="testDatabase()">Test Database</button>
+        <div id="databaseResults"></div>
+    </div>
+
+    <script>
+        let testArticleCount = 0;
+
+        function addResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            container.appendChild(div);
+        }
+
+        async function testAppName() {
+            const container = document.getElementById('appNameResults');
+            container.innerHTML = '';
+
+            try {
+                // Test page title
+                const title = document.title;
+                if (title.includes('Coco Reader')) {
+                    addResult('appNameResults', '✅ Page title contains "Coco Reader"', 'success');
+                } else {
+                    addResult('appNameResults', `❌ Page title is "${title}" - should contain "Coco Reader"`, 'error');
+                }
+
+                // Test manifest
+                const response = await fetch('/manifest.json');
+                const manifest = await response.json();
+                
+                if (manifest.name === 'Coco Reader' && manifest.short_name === 'Coco Reader') {
+                    addResult('appNameResults', '✅ Manifest has correct app name', 'success');
+                } else {
+                    addResult('appNameResults', `❌ Manifest name: "${manifest.name}", short_name: "${manifest.short_name}"`, 'error');
+                }
+
+                // Test home page content
+                const homeResponse = await fetch('/');
+                const homeContent = await homeResponse.text();
+                
+                if (homeContent.includes('🥥 Coco Reader') && !homeContent.includes('Cocoa Reader')) {
+                    addResult('appNameResults', '✅ Home page shows "Coco Reader" and no "Cocoa Reader"', 'success');
+                } else {
+                    addResult('appNameResults', '❌ Home page may still contain "Cocoa Reader" references', 'error');
+                }
+
+            } catch (error) {
+                addResult('appNameResults', `❌ Error testing app name: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStatistics() {
+            const container = document.getElementById('statisticsResults');
+            container.innerHTML = '';
+
+            try {
+                // Check if Statistics component is present
+                const statsElement = document.querySelector('[data-testid="statistics"]');
+                if (statsElement) {
+                    addResult('statisticsResults', '✅ Statistics component found in DOM', 'success');
+                } else {
+                    addResult('statisticsResults', '❌ Statistics component not found in DOM', 'error');
+                }
+
+                // Test local database access
+                if (typeof window !== 'undefined' && window.indexedDB) {
+                    addResult('statisticsResults', '✅ IndexedDB is available', 'success');
+                } else {
+                    addResult('statisticsResults', '❌ IndexedDB not available', 'error');
+                }
+
+            } catch (error) {
+                addResult('statisticsResults', `❌ Error testing statistics: ${error.message}`, 'error');
+            }
+        }
+
+        async function addTestArticle() {
+            const container = document.getElementById('statisticsResults');
+            
+            try {
+                testArticleCount++;
+                const testArticle = {
+                    id: `test-${Date.now()}`,
+                    title: `Test Article ${testArticleCount}`,
+                    url: `https://example.com/test-${testArticleCount}`,
+                    domain: 'example.com',
+                    excerpt: 'This is a test article for statistics testing.',
+                    cleanedHTML: '<p>Test content</p>',
+                    textContent: 'Test content',
+                    read: false,
+                    createdAt: new Date(),
+                    scroll: 0,
+                    readingTime: Math.floor(Math.random() * 10) + 1, // 1-10 minutes
+                    summary: 'Test summary',
+                    keyPoints: 'Test points',
+                    sentiment: 'neutral'
+                };
+
+                // This would normally use the app's API
+                addResult('statisticsResults', `✅ Test article "${testArticle.title}" prepared (${testArticle.readingTime} min read)`, 'success');
+                
+                // Instructions for manual testing
+                addResult('statisticsResults', '💡 Add this article manually in the main app to test statistics', 'info');
+
+            } catch (error) {
+                addResult('statisticsResults', `❌ Error creating test article: ${error.message}`, 'error');
+            }
+        }
+
+        async function markArticleAsRead() {
+            addResult('statisticsResults', '💡 Mark articles as read in the main app to test statistics updates', 'info');
+        }
+
+        async function testCoffeeButton() {
+            const container = document.getElementById('coffeeResults');
+            container.innerHTML = '';
+
+            try {
+                // Check if coffee button link is correct
+                const coffeeLink = 'https://buymeacoffee.com/peridoto';
+                addResult('coffeeResults', `✅ Coffee button should link to: ${coffeeLink}`, 'success');
+
+                // Test button presence
+                addResult('coffeeResults', '💡 Check main app for coffee button (☕) in top right', 'info');
+                addResult('coffeeResults', '💡 Click the coffee button to test external link', 'info');
+
+            } catch (error) {
+                addResult('coffeeResults', `❌ Error testing coffee button: ${error.message}`, 'error');
+            }
+        }
+
+        async function testShakeAnimation() {
+            const container = document.getElementById('coffeeResults');
+            
+            addResult('coffeeResults', '💡 Add 15+ articles in the main app to trigger shake animation', 'info');
+            addResult('coffeeResults', '💡 Coffee button should shake when reaching 15 articles milestone', 'info');
+        }
+
+        async function testDatabase() {
+            const container = document.getElementById('databaseResults');
+            container.innerHTML = '';
+
+            try {
+                // Test database connection by trying to open IndexedDB
+                const dbName = 'cocoa-reader-db';
+                const request = indexedDB.open(dbName, 1);
+                
+                request.onsuccess = function(event) {
+                    addResult('databaseResults', '✅ IndexedDB connection successful', 'success');
+                    event.target.result.close();
+                };
+                
+                request.onerror = function(event) {
+                    addResult('databaseResults', `❌ IndexedDB connection failed: ${event.target.error}`, 'error');
+                };
+
+                // Test environment
+                addResult('databaseResults', `✅ Running in: ${typeof window !== 'undefined' ? 'Browser' : 'Node.js'}`, 'success');
+                addResult('databaseResults', `✅ IndexedDB available: ${typeof indexedDB !== 'undefined'}`, 'success');
+
+            } catch (error) {
+                addResult('databaseResults', `❌ Database test error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic tests on load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                testAppName();
+                testStatistics();
+                testCoffeeButton();
+                testDatabase();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 {
-  "name": "Cocoa Reader - Read Later App",
-  "short_name": "Cocoa Reader",
+  "name": "Coco Reader - Read Later App",
+  "short_name": "Coco Reader",
   "description": "A local read-later application that works completely offline",
   "start_url": "/",
   "display": "standalone",

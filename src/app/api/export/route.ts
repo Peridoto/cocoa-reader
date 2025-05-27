@@ -17,7 +17,7 @@ export async function GET() {
       totalArticles: articles.length,
       articles: articles,
       metadata: {
-        appName: 'Cocoa Reader',
+        appName: 'Coco Reader',
         appVersion: '0.1.0'
       }
     }

@@ -11,6 +11,8 @@ import { ArticleList } from '@/components/ArticleList'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { ExportImport } from '@/components/ExportImport'
 import { BatchProcessing } from '@/components/BatchProcessing'
+import { Statistics } from '@/components/Statistics'
+import { CoffeeDonationButton } from '@/components/CoffeeDonationButton'
 
 export default function HomePageContent() {
   const searchParams = useSearchParams()
@@ -84,17 +86,17 @@ export default function HomePageContent() {
         const demoArticles: Article[] = [
           {
             id: 'demo-1',
-            title: 'Welcome to Cocoa Reader PWA',
+            title: 'Welcome to Coco Reader PWA',
             url: 'https://example.com/welcome',
             domain: 'example.com',
-            excerpt: 'Welcome to the full-featured Cocoa Reader PWA! This version has complete offline functionality including article saving, AI processing, and local storage.',
-            cleanedHTML: '<h1>Welcome to Cocoa Reader PWA</h1><p>This is the complete Progressive Web App version of Cocoa Reader. You can now:</p><ul><li>Save articles from any URL</li><li>Process articles with AI offline</li><li>Export and import your data</li><li>Work completely offline</li></ul>',
-            textContent: 'Welcome to Cocoa Reader PWA. This is the complete Progressive Web App version with full offline functionality.',
+            excerpt: 'Welcome to the full-featured Coco Reader PWA! This version has complete offline functionality including article saving, AI processing, and local storage.',
+            cleanedHTML: '<h1>Welcome to Coco Reader PWA</h1><p>This is the complete Progressive Web App version of Coco Reader. You can now:</p><ul><li>Save articles from any URL</li><li>Process articles with AI offline</li><li>Export and import your data</li><li>Work completely offline</li></ul>',
+            textContent: 'Welcome to Coco Reader PWA. This is the complete Progressive Web App version with full offline functionality.',
             read: false,
             createdAt: new Date(),
             scroll: 0,
             readingTime: 2,
-            summary: 'Introduction to Cocoa Reader PWA with full offline capabilities',
+            summary: 'Introduction to Coco Reader PWA with full offline capabilities',
             keyPoints: 'Offline functionality, Article saving, AI processing, Data export/import',
             sentiment: 'positive'
           },
@@ -104,7 +106,7 @@ export default function HomePageContent() {
             url: 'https://example.com/web-share',
             domain: 'example.com',
             excerpt: 'The Web Share Target API allows web applications to receive shared content from other apps and websites. This PWA supports sharing URLs directly from your browser or other apps.',
-            cleanedHTML: '<h1>Web Share Target Feature</h1><p>With the Web Share Target API, you can:</p><ul><li>Share articles from any website directly to Cocoa Reader</li><li>Use the system share menu on mobile devices</li><li>Process shared content offline</li><li>Save shared articles to your local library</li></ul>',
+            cleanedHTML: '<h1>Web Share Target Feature</h1><p>With the Web Share Target API, you can:</p><ul><li>Share articles from any website directly to Coco Reader</li><li>Use the system share menu on mobile devices</li><li>Process shared content offline</li><li>Save shared articles to your local library</li></ul>',
             textContent: 'Web Share Target allows sharing content directly to the PWA from other apps and websites.',
             read: false,
             createdAt: new Date(Date.now() - 86400000), // 1 day ago
@@ -244,10 +246,14 @@ export default function HomePageContent() {
         <header className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
-              🥥 Cocoa Reader
+              🥥 Coco Reader
             </h1>
             <div className="flex items-center space-x-2">
               <ThemeToggle />
+              <CoffeeDonationButton 
+                articlesCount={articles.length}
+                onShake={() => console.log('Coffee button shake triggered!')}
+              />
               <button
                 onClick={() => setShowSettings(!showSettings)}
                 className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-400 transition-colors duration-200"
@@ -271,6 +277,7 @@ export default function HomePageContent() {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Settings</h2>
               
               <div className="space-y-6">
+                <Statistics articles={articles} />
                 <ExportImport />
                 <BatchProcessing articles={articles} onArticlesUpdated={setArticles} />
               </div>

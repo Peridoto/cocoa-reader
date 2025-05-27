@@ -102,7 +102,7 @@ export function PWAInstaller() {
       // Fallback for browsers that don't support beforeinstallprompt
       // Show manual installation instructions
       alert('To install this app:\n\n' +
-            'Chrome: Click menu (⋮) → "Install Cocoa Reader"\n' +
+            'Chrome: Click menu (⋮) → "Install Coco Reader"\n' +
             'Safari: Click share (⬆) → "Add to Home Screen"\n' +
             'Edge: Click menu (⋯) → "Apps" → "Install this site as an app"')
       return
@@ -155,7 +155,7 @@ export function PWAInstaller() {
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold">Install Cocoa Reader</h3>
+            <h3 className="text-lg font-semibold">Install Coco Reader</h3>
             <p className="text-sm opacity-90">
               Get the full experience with offline reading and faster access. Install now!
             </p>

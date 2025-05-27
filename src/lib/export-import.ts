@@ -22,7 +22,7 @@ export function exportArticlesToJSON(articles: Article[]): string {
     totalArticles: articles.length,
     articles: articles,
     metadata: {
-      appName: 'Cocoa Reader',
+      appName: 'Coco Reader',
       appVersion: '0.1.0',
       userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : undefined
     }

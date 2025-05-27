@@ -16,7 +16,7 @@ export default function StaticHomePage() {
               <span className="text-white font-bold text-sm">CR</span>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Cocoa Reader
+              Coco Reader
             </h1>
           </div>
           <ThemeToggle />
@@ -164,7 +164,7 @@ export default function StaticHomePage() {
 
         {/* Footer */}
         <footer className="text-center text-gray-500 dark:text-gray-400 mt-16">
-          <p>&copy; 2024 Cocoa Reader. A local, privacy-first read-later application.</p>
+          <p>&copy; 2024 Coco Reader. A local, privacy-first read-later application.</p>
         </footer>
       </div>
     </div>

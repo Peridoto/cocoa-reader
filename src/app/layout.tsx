@@ -7,13 +7,13 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
 
 export const metadata: Metadata = {
-  title: 'Cocoa Reader - Read Later App',
+  title: 'Coco Reader - Read Later App',
   description: 'A local read-later application that works completely offline',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Cocoa Reader',
+    title: 'Coco Reader',
   },
 }
 
