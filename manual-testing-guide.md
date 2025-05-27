@@ -11,7 +11,7 @@
 ### 2. ✅ Statistics Component
 **What to test:**
 - Should see statistics cards in the settings panel
-- Cards should show: Minutes Read, Articles Read, Articles Added, Reading Progress, Average Reading Time
+- Cards should show: Min Read, Articles Read, Articles Added, Reading Progress, Average Reading Time
 - Add some articles and mark them as read to see stats update
 
 ### 3. ✅ Coffee Donation Button

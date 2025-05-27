@@ -98,7 +98,7 @@ async function testStatisticsComponent() {
         const homeContent = homeResponse.data;
         
         // Check if Statistics component is being loaded
-        if (homeContent.includes('Reading Statistics') || homeContent.includes('Minutes Read')) {
+        if (homeContent.includes('Reading Statistics') || homeContent.includes('Min Read')) {
             addTestResult('statisticsComponent', 'Component Present', true, 'Statistics component elements found in DOM');
         } else {
             addTestResult('statisticsComponent', 'Component Present', false, 'Statistics component not found in rendered page');

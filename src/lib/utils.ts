@@ -9,7 +9,7 @@ export function formatDistanceToNow(date: Date): string {
   const diffInDays = Math.floor(diffInHours / 24)
 
   if (diffInMinutes < 1) return 'just now'
-  if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'}`
+  if (diffInMinutes < 60) return `${diffInMinutes} min`
   if (diffInHours < 24) return `${diffInHours} hour${diffInHours === 1 ? '' : 's'}`
   if (diffInDays < 7) return `${diffInDays} day${diffInDays === 1 ? '' : 's'}`
   
@@ -75,4 +75,71 @@ export function normalizeUrl(url: string): string {
   
   // Otherwise, add https:// prefix
   return `https://${trimmedUrl}`
+}
+
+/**
+ * Extract a meaningful title from a URL for fallback articles
+ */
+export function extractTitleFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url)
+    const pathname = urlObj.pathname
+    const domain = urlObj.hostname
+    
+    // Special handling for GitHub
+    if (domain.includes('github.com')) {
+      const pathParts = pathname.split('/').filter(p => p)
+      if (pathParts.length >= 2) {
+        const owner = pathParts[0]
+        const repo = pathParts[1]
+        
+        if (pathParts.includes('blob') && pathParts.length > 4) {
+          // It's a file
+          const fileName = pathParts[pathParts.length - 1]
+          return `${fileName} - ${owner}/${repo}`
+        } else if (pathParts.includes('issues') && pathParts.length > 3) {
+          return `Issue #${pathParts[3]} - ${owner}/${repo}`
+        } else if (pathParts.includes('pull') && pathParts.length > 3) {
+          return `Pull Request #${pathParts[3]} - ${owner}/${repo}`
+        } else if (pathParts.length === 2) {
+          return `${owner}/${repo}`
+        } else if (pathParts.length > 2) {
+          return `${pathParts.slice(2).join('/')} - ${owner}/${repo}`
+        }
+      }
+    }
+    
+    // Extract meaningful part from path
+    const pathParts = pathname.split('/').filter(p => p && p !== 'index.html' && p !== 'index.php')
+    
+    if (pathParts.length > 0) {
+      // Use the last meaningful part of the path
+      const lastPart = pathParts[pathParts.length - 1]
+      
+      // Remove common file extensions
+      const cleanPart = lastPart
+        .replace(/\.(html|htm|php|asp|aspx|jsp)$/i, '')
+        .replace(/\.[^/.]+$/, '') // Remove any remaining extension
+      
+      if (cleanPart && cleanPart.length > 1) {
+        // Convert URL slug to readable title
+        const title = cleanPart
+          .replace(/[-_]/g, ' ') // Replace hyphens and underscores with spaces
+          .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space between camelCase words
+          .replace(/\b\w/g, (char) => char.toUpperCase()) // Capitalize first letter of each word
+          .trim()
+        
+        if (title.length > 3) {
+          return title
+        }
+      }
+    }
+    
+    // Fallback to domain-based title
+    const domainParts = domain.split('.')
+    const mainDomain = domainParts.length > 2 ? domainParts[domainParts.length - 2] : domainParts[0]
+    return mainDomain.charAt(0).toUpperCase() + mainDomain.slice(1) + ' Article'
+  } catch {
+    return 'Saved Article'
+  }
 }

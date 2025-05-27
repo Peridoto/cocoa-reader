@@ -72,7 +72,7 @@ export function Statistics({ articles }: StatisticsProps) {
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Reading Statistics</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Minutes Read */}
+        {/* Min Read */}
         <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
           <div className="flex items-center">
             <div className="bg-purple-100 dark:bg-purple-900/40 rounded-full p-2 mr-3">
@@ -82,7 +82,7 @@ export function Statistics({ articles }: StatisticsProps) {
             </div>
             <div>
               <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.minutesRead}</p>
-              <p className="text-sm text-purple-700 dark:text-purple-300">Minutes Read</p>
+              <p className="text-sm text-purple-700 dark:text-purple-300">Min Read</p>
             </div>
           </div>
         </div>

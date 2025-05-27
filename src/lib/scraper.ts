@@ -6,6 +6,7 @@ import {
   parseMetaAndHeaders,
   type ScrapingPermissions 
 } from './web-ethics'
+import { extractTitleFromUrl } from './utils'
 
 export interface ScrapedContent {
   title: string
@@ -18,6 +19,100 @@ export interface ScrapedContent {
 export interface ScrapingResult extends ScrapedContent {
   ethicsCompliant: boolean
   permissions: ScrapingPermissions
+}
+
+/**
+ * Create a fallback article when scraping fails due to access restrictions
+ */
+function createFallbackArticle(url: string, error: Error): ScrapingResult {
+  const domain = new URL(url).hostname
+  const title = extractTitleFromUrl(url)
+  
+  // Create helpful fallback content
+  const fallbackContent = `
+    <article class="fallback-article">
+      <header>
+        <h1>${title}</h1>
+        <p class="domain-info">From: ${domain}</p>
+      </header>
+      
+      <div class="content">
+        <p>This article could not be automatically processed due to access restrictions, but the link has been saved for you to read later.</p>
+        
+        <div class="access-info">
+          <h3>Why couldn't this be processed?</h3>
+          <p>The website may have:</p>
+          <ul>
+            <li>Anti-scraping protection</li>
+            <li>Login requirements</li>
+            <li>Geographic restrictions</li>
+            <li>Technical limitations</li>
+          </ul>
+        </div>
+        
+        <div class="reading-instructions">
+          <h3>How to read this article:</h3>
+          <p>Click the original link below to read the full content on the website:</p>
+          <p><a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a></p>
+        </div>
+      </div>
+    </article>
+  `
+  
+  const textContent = `${title}
+
+This article from ${domain} could not be automatically processed due to access restrictions, but the link has been saved for you to read later.
+
+Why couldn't this be processed?
+The website may have anti-scraping protection, login requirements, geographic restrictions, or technical limitations.
+
+How to read this article:
+Click the original link to read the full content: ${url}`
+
+  // Create mock permissions for fallback
+  const fallbackPermissions: ScrapingPermissions = {
+    allowed: false,
+    reason: 'Fallback article created due to access restrictions',
+    respectHeaders: { noarchive: false, noindex: false, nofollow: false }
+  }
+
+  return {
+    title,
+    domain,
+    excerpt: `Article from ${domain} saved for later reading. Content extraction was limited due to access restrictions.`,
+    cleanedHTML: fallbackContent,
+    textContent,
+    ethicsCompliant: true, // Fallback respects access restrictions
+    permissions: fallbackPermissions
+  }
+}
+
+/**
+ * Check if an error indicates access restrictions that should trigger fallback
+ */
+function isAccessDeniedError(error: Error): boolean {
+  const errorMessage = error.message.toLowerCase()
+  
+  // HTTP error codes that typically indicate access restrictions
+  // Note: 404 is NOT included as it means the page doesn't exist
+  const accessDeniedPatterns = [
+    'http error! status: 403', // Forbidden
+    'http error! status: 401', // Unauthorized  
+    'http error! status: 429', // Too Many Requests
+    'http error! status: 503', // Service Unavailable
+    'http error! status: 502', // Bad Gateway (often used for blocking)
+    'access denied',
+    'forbidden',
+    'unauthorized',
+    'blocked',
+    'rate limit',
+    'too many requests',
+    'scraping not permitted',
+    'disallowed by robots.txt',
+    'page contains noarchive directive'
+  ]
+  
+  return accessDeniedPatterns.some(pattern => errorMessage.includes(pattern))
 }
 
 /**
@@ -108,6 +203,15 @@ export async function scrapeArticle(url: string): Promise<ScrapingResult> {
     }
   } catch (error) {
     console.error('Error in ethical scraping:', error)
-    throw new Error(`Failed to scrape article ethically: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    
+    // Check if the error is due to access restrictions
+    const errorInstance = error instanceof Error ? error : new Error(String(error))
+    
+    if (isAccessDeniedError(errorInstance)) {
+      console.log('Access denied error detected, creating fallback article:', errorInstance.message)
+      return createFallbackArticle(url, errorInstance)
+    }
+    
+    throw new Error(`Failed to scrape article ethically: ${errorInstance.message}`)
   }
 }
