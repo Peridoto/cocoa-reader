@@ -106,12 +106,6 @@ export function ArticleList({
                 </a>
                 <span>•</span>
                 <span>{formatDistanceToNow(new Date(article.createdAt))} ago</span>
-                {article.scroll > 0 && (
-                  <>
-                    <span>•</span>
-                    <span>{article.scroll}% progress</span>
-                  </>
-                )}
               </div>
 
               {article.excerpt && (
@@ -157,6 +151,13 @@ export function ArticleList({
                 onProcessComplete={() => handleAIProcessComplete(article.id)} 
                 size="sm"
               />
+
+              {/* Progress Information */}
+              {article.scroll > 0 && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                  {article.scroll}% progress
+                </div>
+              )}
             </div>
           </div>
         </article>
