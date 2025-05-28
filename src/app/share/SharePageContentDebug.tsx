@@ -128,6 +128,44 @@ export default function SharePageContentDebug() {
     }
   }, []);
 
+  // Check if user is online
+  const isOnline = () => {
+    return navigator.onLine;
+  };
+
+  // Create offline article with minimal data
+  const createOfflineArticle = (url: string, title?: string): Article => {
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname;
+    const offlineTitle = title || domain;
+    
+    return {
+      id: crypto.randomUUID(),
+      url: url,
+      title: offlineTitle,
+      domain: domain,
+      excerpt: 'Article saved without internet connection',
+      cleanedHTML: `<div class="offline-article">
+        <h2>${offlineTitle}</h2>
+        <p><strong>URL:</strong> <a href="${url}" target="_blank">${url}</a></p>
+        <p><em>This article was saved without internet connection.</em></p>
+        <button onclick="window.location.reload()" style="background: #3b82f6; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+          Click here to process content now
+        </button>
+      </div>`,
+      textContent: `${offlineTitle}\n\nURL: ${url}\n\nArticle saved without internet connection. Click to process content now.`,
+      read: false,
+      createdAt: new Date(),
+      scroll: 0,
+      readingTime: 1,
+      summary: null,
+      keyPoints: null,
+      categories: null,
+      tags: null,
+      sentiment: null
+    };
+  };
+
   const handleSaveArticle = async (urlToSave?: string, titleToSave?: string) => {
     const url = urlToSave || formData.url.trim();
     const title = titleToSave || formData.title.trim();
@@ -146,35 +184,60 @@ export default function SharePageContentDebug() {
     setErrorMessage('');
     setApiResponse(null);
 
-    console.log('📤 Starting local article processing...');
+    console.log('📤 Starting article processing...');
+    console.log('🌐 Online status:', isOnline());
 
     try {
-      // Use ClientScraper to extract article content (client-side)
-      const scraper = new ClientScraper();
-      console.log('🔍 Scraping article content...');
-      
-      const scrapedData = await scraper.scrapeArticle(url);
-      console.log('📥 Scraped data:', scrapedData);
-      
-      // Create article object for local storage
-      const newArticle: Article = {
-        id: crypto.randomUUID(),
-        url: url,
-        title: title || scrapedData.title || 'Untitled Article',
-        domain: new URL(url).hostname,
-        excerpt: scrapedData.excerpt || '',
-        cleanedHTML: scrapedData.cleanedHTML || '',
-        textContent: scrapedData.textContent || '',
-        read: false,
-        createdAt: new Date(),
-        scroll: 0,
-        readingTime: scrapedData.readingTime || 1,
-        summary: null,
-        keyPoints: null,
-        categories: null,
-        tags: null,
-        sentiment: null
-      };
+      let newArticle: Article;
+
+      // Check if user is offline
+      if (!isOnline()) {
+        console.log('📵 User is offline - creating offline article');
+        newArticle = createOfflineArticle(url, title);
+        
+        setApiResponse({
+          status: 200,
+          statusText: 'OK - Offline Mode',
+          headers: { 'content-type': 'application/json' },
+          data: { article: newArticle, source: 'offline-fallback' },
+          requestBody: { url, title, method: 'offline-fallback' },
+        });
+      } else {
+        // Online - use ClientScraper to extract article content
+        const scraper = new ClientScraper();
+        console.log('🔍 Scraping article content...');
+        
+        const scrapedData = await scraper.scrapeArticle(url);
+        console.log('📥 Scraped data:', scrapedData);
+        
+        // Create article object for local storage
+        newArticle = {
+          id: crypto.randomUUID(),
+          url: url,
+          title: title || scrapedData.title || 'Untitled Article',
+          domain: new URL(url).hostname,
+          excerpt: scrapedData.excerpt || '',
+          cleanedHTML: scrapedData.cleanedHTML || '',
+          textContent: scrapedData.textContent || '',
+          read: false,
+          createdAt: new Date(),
+          scroll: 0,
+          readingTime: scrapedData.readingTime || 1,
+          summary: null,
+          keyPoints: null,
+          categories: null,
+          tags: null,
+          sentiment: null
+        };
+
+        setApiResponse({
+          status: 200,
+          statusText: 'OK',
+          headers: { 'content-type': 'application/json' },
+          data: { article: newArticle, source: 'local-storage' },
+          requestBody: { url, title, method: 'local-storage' },
+        });
+      }
 
       console.log('💾 Saving article to local database...');
       
@@ -182,14 +245,6 @@ export default function SharePageContentDebug() {
       await localDB.init();
       
       const savedArticle = await localDB.saveArticle(newArticle);
-      
-      setApiResponse({
-        status: 200,
-        statusText: 'OK',
-        headers: { 'content-type': 'application/json' },
-        data: { article: savedArticle, source: 'local-storage' },
-        requestBody: { url, title, method: 'local-storage' },
-      });
 
       setStatus('success');
       console.log('✅ Article saved successfully to local storage:', savedArticle.id);
@@ -262,33 +317,52 @@ export default function SharePageContentDebug() {
             Article Saved Locally! 🎉
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            The article has been saved to your local browser storage for privacy.
+            {apiResponse?.data?.source === 'offline-fallback' 
+              ? 'The article was saved offline. Connect to internet and refresh to process content.'
+              : 'The article has been saved to your local browser storage for privacy.'
+            }
           </p>
-          <button
-            onClick={() => router.push('/')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors mr-4"
-          >
-            Go to Library
-          </button>
-          <button
-            onClick={handleCopyDebugInfo}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-          >
-            Copy Debug Info
-          </button>
-        </div>
-
-        {/* Success Debug Info */}
-        {apiResponse && (
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
-              ✅ API Response Details
-            </h3>
-            <pre className="text-xs text-green-700 dark:text-green-300 overflow-auto">
-              {JSON.stringify(apiResponse, null, 2)}
-            </pre>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <button
+              onClick={() => router.push('/')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              Go to Library
+            </button>
+            <button
+              onClick={handleCopyDebugInfo}
+              className="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              📋 Copy Debug Info
+            </button>
+            {apiResponse?.data?.source === 'offline-fallback' && (
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+              >
+                🔄 Process Content Now
+              </button>
+            )}
           </div>
-        )}
+          
+          {/* Status Badge */}
+          <div className="flex items-center gap-2 mb-4">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              apiResponse?.data?.source === 'offline-fallback'
+                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+            }`}>
+              {apiResponse?.data?.source === 'offline-fallback' ? '📵 Offline Mode' : '🌐 Online Mode'}
+            </span>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              isOnline() 
+                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+            }`}>
+              {isOnline() ? '✅ Connected' : '❌ No Internet'}
+            </span>
+          </div>
+        </div>
       </div>
     );
   }
@@ -338,6 +412,7 @@ export default function SharePageContentDebug() {
               <div>
                 <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-1">🌐 Environment:</h4>
                 <div className="text-blue-700 dark:text-blue-300 space-y-1">
+                  <div><strong>Online Status:</strong> {isOnline() ? '✅ Connected' : '❌ Offline'}</div>
                   <div><strong>Share Target:</strong> {debugInfo.shareTargetSupported ? '✅' : '❌'}</div>
                   <div><strong>Web Share:</strong> {debugInfo.webShareSupported ? '✅' : '❌'}</div>
                   <div><strong>Referrer:</strong> {debugInfo.referrer || 'None'}</div>
@@ -479,8 +554,20 @@ export default function SharePageContentDebug() {
               ⏳ Processing Request...
             </h3>
             <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              Processing article content and saving to local browser storage. This may take a few seconds depending on the website's response time.
+              {isOnline() 
+                ? 'Processing article content and saving to local browser storage. This may take a few seconds depending on the website\'s response time.'
+                : 'No internet connection detected. Saving article in offline mode with basic information.'
+              }
             </p>
+            <div className="mt-2">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                isOnline() 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                  : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+              }`}>
+                {isOnline() ? '🌐 Online Mode' : '📵 Offline Mode'}
+              </span>
+            </div>
           </div>
         )}
       </div>
