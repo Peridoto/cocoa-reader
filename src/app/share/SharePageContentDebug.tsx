@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Article } from '@prisma/client';
+import { ClientScraper } from '@/lib/client-scraper';
+import { localDB } from '@/lib/local-database';
+import type { Article } from '@/types/article';
 
 type FormData = {
   url: string;
@@ -144,43 +146,53 @@ export default function SharePageContentDebug() {
     setErrorMessage('');
     setApiResponse(null);
 
-    const requestBody = {
-      url,
-      title: title || undefined,
-      notes: formData.notes || undefined,
-    };
-
-    console.log('📤 Sending API request:', requestBody);
+    console.log('📤 Starting local article processing...');
 
     try {
-      const response = await fetch('/api/article', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+      // Use ClientScraper to extract article content (client-side)
+      const scraper = new ClientScraper();
+      console.log('🔍 Scraping article content...');
+      
+      const scrapedData = await scraper.scrapeArticle(url);
+      console.log('📥 Scraped data:', scrapedData);
+      
+      // Create article object for local storage
+      const newArticle: Article = {
+        id: crypto.randomUUID(),
+        url: url,
+        title: title || scrapedData.title || 'Untitled Article',
+        domain: new URL(url).hostname,
+        excerpt: scrapedData.excerpt || '',
+        cleanedHTML: scrapedData.cleanedHTML || '',
+        textContent: scrapedData.textContent || '',
+        read: false,
+        createdAt: new Date(),
+        scroll: 0,
+        readingTime: scrapedData.readingTime || 1,
+        summary: null,
+        keyPoints: null,
+        categories: null,
+        tags: null,
+        sentiment: null
+      };
 
-      console.log('📥 API Response status:', response.status);
-      console.log('📥 API Response headers:', Object.fromEntries(response.headers.entries()));
-
-      const data = await response.json();
-      console.log('📥 API Response data:', data);
+      console.log('💾 Saving article to local database...');
+      
+      // Ensure local database is initialized
+      await localDB.init();
+      
+      const savedArticle = await localDB.saveArticle(newArticle);
       
       setApiResponse({
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries()),
-        data: data,
-        requestBody: requestBody,
+        status: 200,
+        statusText: 'OK',
+        headers: { 'content-type': 'application/json' },
+        data: { article: savedArticle, source: 'local-storage' },
+        requestBody: { url, title, method: 'local-storage' },
       });
 
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
       setStatus('success');
-      console.log('✅ Article saved successfully:', data);
+      console.log('✅ Article saved successfully to local storage:', savedArticle.id);
       
       // Redirect to the article or back to home after a short delay
       setTimeout(() => {
@@ -247,10 +259,10 @@ export default function SharePageContentDebug() {
             </svg>
           </div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Article Saved Successfully! 🎉
+            Article Saved Locally! 🎉
           </h2>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            The article has been added to your reading list.
+            The article has been saved to your local browser storage for privacy.
           </p>
           <button
             onClick={() => router.push('/')}
@@ -285,7 +297,7 @@ export default function SharePageContentDebug() {
     <div className="max-w-4xl mx-auto">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-          Save Article - Debug Mode 🔍
+          Save Article Locally - Debug Mode 🔍
         </h2>
 
         {/* Debug Information Panel */}
@@ -467,7 +479,7 @@ export default function SharePageContentDebug() {
               ⏳ Processing Request...
             </h3>
             <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              Sending article data to the server. This may take a few seconds depending on the website's response time.
+              Processing article content and saving to local browser storage. This may take a few seconds depending on the website's response time.
             </p>
           </div>
         )}
