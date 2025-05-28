@@ -30,13 +30,37 @@ type DebugInfo = {
   webShareSupported: boolean;
 };
 
+type ApiResponse = {
+  status?: number;
+  statusText?: string;
+  headers?: Record<string, string>;
+  data?: any;
+  requestBody?: any;
+  request?: {
+    url: string;
+    method: string;
+    body: any;
+    timestamp: string;
+  };
+  response?: {
+    status: number;
+    statusText: string;
+    data: any;
+    timestamp: string;
+  };
+  error?: {
+    message: string;
+    stack?: string;
+  };
+};
+
 export default function SharePageContentDebug() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
-  const [apiResponse, setApiResponse] = useState<any>(null);
+  const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
   const [formData, setFormData] = useState<FormData>({
     url: '',
     title: '',
@@ -169,7 +193,7 @@ export default function SharePageContentDebug() {
       const errorMsg = error instanceof Error ? error.message : 'Failed to save article';
       setErrorMessage(errorMsg);
       
-      setApiResponse(prev => ({
+      setApiResponse((prev: ApiResponse | null) => ({
         ...prev,
         error: {
           message: errorMsg,
