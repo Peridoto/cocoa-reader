@@ -21,7 +21,7 @@ async function verifyFeatures() {
 
         // Test 2: Check for Statistics component
         console.log('\n2. 📊 Testing Statistics Component...');
-        const hasStatistics = html.includes('Statistics') || html.includes('minutes read') || html.includes('articles read');
+        const hasStatistics = html.includes('Statistics') || html.includes('min read') || html.includes('articles read');
         console.log(`   ${hasStatistics ? '✅' : '❌'} Statistics component present: ${hasStatistics}`);
 
         // Test 3: Check for Coffee button

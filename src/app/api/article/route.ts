@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     console.log('Starting to scrape article:', url)
     // Scrape the article content with ethics compliance
     const scrapingResult = await scrapeArticle(url)
-    console.log('Scraping completed ethically, saving to database...')
+    console.log('Scraping completed ethically, result type:', scrapingResult.permissions.reason)
 
     // Extract only the content fields for database storage
     const { ethicsCompliant, permissions, ...scrapedContent } = scrapingResult
@@ -48,11 +48,21 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log('Article saved successfully with ethics compliance:', {
-      id: article.id,
-      ethicsCompliant,
-      permissions: permissions.reason
-    })
+    // Log different messages for fallback vs successful scraping
+    if (permissions.reason.includes('Fallback')) {
+      console.log('Fallback article saved successfully:', {
+        id: article.id,
+        title: article.title,
+        reason: permissions.reason
+      })
+    } else {
+      console.log('Article saved successfully with ethics compliance:', {
+        id: article.id,
+        ethicsCompliant,
+        permissions: permissions.reason
+      })
+    }
+    
     return NextResponse.json(article, { status: 201 })
   } catch (error) {
     console.error('Error creating article:', error)

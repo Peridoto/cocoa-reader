@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import SharePageContentFixed from './SharePageContentFixed'
+import SharePageContentDebug from './SharePageContentDebug'
 
 function LoadingFallback() {
   return (
@@ -31,7 +31,7 @@ export default function SharePage() {
           Add Article
         </h1>
         <Suspense fallback={<LoadingFallback />}>
-          <SharePageContentFixed />
+          <SharePageContentDebug />
         </Suspense>
       </div>
     </div>

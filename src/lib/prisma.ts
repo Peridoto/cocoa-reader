@@ -7,9 +7,12 @@ const globalForPrisma = globalThis as unknown as {
 // Ensure DATABASE_URL is properly configured
 const databaseUrl = process.env.DATABASE_URL || 'file:./data/readlater.db'
 
-if (!databaseUrl || !databaseUrl.startsWith('file:')) {
-  console.error('DATABASE_URL must be set and start with "file:" protocol')
-  console.error('Current DATABASE_URL:', databaseUrl)
+// Validate DATABASE_URL format (support both SQLite and PostgreSQL)
+if (!databaseUrl) {
+  console.error('DATABASE_URL environment variable is not set')
+} else if (!databaseUrl.startsWith('file:') && !databaseUrl.startsWith('postgres') && !databaseUrl.startsWith('prisma+postgres')) {
+  console.warn('DATABASE_URL should start with "file:", "postgres://", "postgresql://", or "prisma+postgres://"')
+  console.warn('Current DATABASE_URL:', databaseUrl.substring(0, 50) + '...')
 }
 
 export const prisma = globalForPrisma.prisma ?? new PrismaClient({
