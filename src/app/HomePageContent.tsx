@@ -12,13 +12,14 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { ExportImport } from '@/components/ExportImport'
 import { BatchProcessing } from '@/components/BatchProcessing'
 import { Statistics } from '@/components/Statistics'
+import { WelcomeSettings } from '@/components/WelcomeSettings'
 import { CoffeeDonationButton } from '@/components/CoffeeDonationButton'
 
 export default function HomePageContent() {
   const searchParams = useSearchParams()
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'read' | 'unread'>('all')
+  const [filter, setFilter] = useState<'all' | 'read' | 'unread' | 'favorites'>('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [showSettings, setShowSettings] = useState(false)
@@ -66,6 +67,18 @@ export default function HomePageContent() {
         } else {
           articles = await localDB.getAllArticles()
         }
+      } else if (filter === 'favorites') {
+        articles = await localDB.filterFavoriteArticles()
+        
+        // Apply search filter if needed
+        if (debouncedSearchTerm.trim()) {
+          articles = articles.filter(article => 
+            article.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+            article.textContent.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+            article.domain.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+            (article.summary && article.summary.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
+          )
+        }
       } else {
         const readStatus = filter === 'read'
         articles = await localDB.filterArticles(readStatus)
@@ -93,6 +106,7 @@ export default function HomePageContent() {
             cleanedHTML: '<h1>Welcome to Coco Reader PWA</h1><p>This is the complete Progressive Web App version of Coco Reader. You can now:</p><ul><li>Save articles from any URL</li><li>Process articles with AI offline</li><li>Export and import your data</li><li>Work completely offline</li></ul>',
             textContent: 'Welcome to Coco Reader PWA. This is the complete Progressive Web App version with full offline functionality.',
             read: false,
+            favorite: false,
             createdAt: new Date(),
             scroll: 0,
             readingTime: 2,
@@ -109,6 +123,7 @@ export default function HomePageContent() {
             cleanedHTML: '<h1>Web Share Target Feature</h1><p>With the Web Share Target API, you can:</p><ul><li>Share articles from any website directly to Coco Reader</li><li>Use the system share menu on mobile devices</li><li>Process shared content offline</li><li>Save shared articles to your local library</li></ul>',
             textContent: 'Web Share Target allows sharing content directly to the PWA from other apps and websites.',
             read: false,
+            favorite: false,
             createdAt: new Date(Date.now() - 86400000), // 1 day ago
             scroll: 0,
             readingTime: 3,
@@ -172,6 +187,20 @@ export default function HomePageContent() {
     }
   }
 
+  const handleToggleFavorite = async (article: Article) => {
+    try {
+      const updatedArticle = { ...article, favorite: !article.favorite }
+      await localDB.updateArticle(article.id, { favorite: !article.favorite })
+      setArticles(prev => 
+        prev.map(a => 
+          a.id === article.id ? updatedArticle : a
+        )
+      )
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error)
+    }
+  }
+
   const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewArticleUrl(e.target.value)
   }
@@ -185,6 +214,13 @@ export default function HomePageContent() {
         setNewArticleUrl(`https://${trimmedUrl}`)
       }
     }
+  }
+
+  const handleWelcomeReset = () => {
+    // This function handles the welcome page reset
+    // The actual reset logic is handled in the WelcomeSettings component
+    // We could add additional logic here if needed, such as refreshing the page
+    console.log('Welcome page reset completed')
   }
 
   const handleAddArticle = async (e: React.FormEvent) => {
@@ -217,6 +253,7 @@ export default function HomePageContent() {
         cleanedHTML: scrapedArticle.cleanedHTML || '',
         textContent: scrapedArticle.textContent || '',
         read: false,
+        favorite: false,
         createdAt: new Date(),
         scroll: 0,
         readingTime: scrapedArticle.readingTime || 1,
@@ -278,6 +315,7 @@ export default function HomePageContent() {
               
               <div className="space-y-6">
                 <Statistics articles={articles} />
+                <WelcomeSettings onWelcomeReset={handleWelcomeReset} />
                 <ExportImport />
                 <BatchProcessing articles={articles} onArticlesUpdated={setArticles} />
               </div>
@@ -335,7 +373,7 @@ export default function HomePageContent() {
             </div>
             
             <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden">
-              {(['all', 'unread', 'read'] as const).map((filterOption) => (
+              {(['all', 'unread', 'read', 'favorites'] as const).map((filterOption) => (
                 <button
                   key={filterOption}
                   onClick={() => setFilter(filterOption)}
@@ -358,6 +396,7 @@ export default function HomePageContent() {
           loading={loading}
           onArticleUpdated={handleArticleUpdated}
           onArticleDeleted={handleArticleDeleted}
+          onToggleFavorite={handleToggleFavorite}
         />
       </div>
     </div>
