@@ -30,6 +30,7 @@ class LocalDatabase {
           store.createIndex('title', 'title', { unique: false })
           store.createIndex('domain', 'domain', { unique: false })
           store.createIndex('read', 'read', { unique: false })
+          store.createIndex('favorite', 'favorite', { unique: false })
           store.createIndex('createdAt', 'createdAt', { unique: false })
           store.createIndex('textContent', 'textContent', { unique: false })
         }
@@ -142,6 +143,11 @@ class LocalDatabase {
     return allArticles.filter(article => article.read === read)
   }
 
+  async filterFavoriteArticles(): Promise<Article[]> {
+    const allArticles = await this.getAllArticles()
+    return allArticles.filter(article => article.favorite === true)
+  }
+
   async exportData(): Promise<string> {
     const articles = await this.getAllArticles()
     return JSON.stringify({
@@ -173,6 +179,7 @@ class LocalDatabase {
             cleanedHTML: articleData.cleanedHTML || '',
             textContent: articleData.textContent || '',
             read: Boolean(articleData.read),
+            favorite: Boolean(articleData.favorite),
             createdAt: new Date(articleData.createdAt || Date.now()),
             scroll: Number(articleData.scroll) || 0,
             readingTime: Number(articleData.readingTime) || 1,

@@ -409,6 +409,7 @@ export class ClientScraper {
       cleanedHTML,
       textContent,
       read: false,
+      favorite: false,
       createdAt: new Date(),
       scroll: 0,
       readingTime,

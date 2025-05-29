@@ -43,6 +43,7 @@ export function AddArticleForm({ onArticleAdded, onSuccess, onCancel, prefilledU
         cleanedHTML: scrapedArticle.cleanedHTML || '',
         textContent: scrapedArticle.textContent || '',
         read: false,
+        favorite: false,
         createdAt: new Date(),
         scroll: 0,
         readingTime: scrapedArticle.readingTime || 1,

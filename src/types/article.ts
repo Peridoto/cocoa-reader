@@ -9,6 +9,7 @@ export interface Article {
   createdAt: Date
   read: boolean
   scroll: number
+  favorite: boolean
   // AI Processing fields
   summary?: string | null
   keyPoints?: string | null
@@ -28,6 +29,7 @@ export interface CreateArticleRequest {
 export interface UpdateArticleRequest {
   read?: boolean
   scroll?: number
+  favorite?: boolean
 }
 
 export interface ArticlesResponse {

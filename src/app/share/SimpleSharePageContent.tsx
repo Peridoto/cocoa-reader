@@ -48,6 +48,7 @@ export default function SimpleSharePageContent() {
               cleanedHTML: '<p>Test content</p>',
               textContent: text || 'Test content',
               read: false,
+              favorite: false,
               createdAt: new Date(),
               scroll: 0,
               readingTime: 1,

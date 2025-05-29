@@ -21,6 +21,7 @@ model Article {
   createdAt   DateTime @default(now())
   read        Boolean  @default(false)
   scroll      Int      @default(0) // 0-100
+  favorite    Boolean  @default(false)
   
   // AI Processing fields
   summary         String?  // AI-generated summary
@@ -35,4 +36,5 @@ model Article {
   @@index([createdAt])
   @@index([read])
   @@index([domain])
+  @@index([favorite])
 }

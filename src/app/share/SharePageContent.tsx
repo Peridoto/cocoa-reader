@@ -102,6 +102,7 @@ export default function SharePageContent() {
         cleanedHTML: scrapedData.cleanedHTML || '',
         textContent: scrapedData.textContent || text || '',
         read: false,
+        favorite: false,
         createdAt: new Date(),
         scroll: 0,
         readingTime: scrapedData.readingTime || 0,

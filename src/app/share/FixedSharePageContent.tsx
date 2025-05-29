@@ -53,6 +53,7 @@ export default function FixedSharePageContent() {
             cleanedHTML: '<p>Shared content</p>',
             textContent: text || 'Shared content',
             read: false,
+            favorite: false,
             createdAt: new Date(),
             scroll: 0,
             readingTime: 2,

@@ -12,6 +12,7 @@ type ArticleListItem = {
   createdAt: Date
   read: boolean
   scroll: number
+  favorite: boolean
   // AI Processing fields
   summary?: string | null
   keyPoints?: string | null
@@ -33,17 +34,22 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
     const read = searchParams.get('read')
+    const favorite = searchParams.get('favorite')
     const search = searchParams.get('search')?.trim()
 
-    console.log('API /articles called with:', { page, limit, read, search })
+    console.log('API /articles called with:', { page, limit, read, favorite, search })
 
-    // Build where clause for read status
+    // Build where clause for read status and favorites
     const where: any = {}
     
     if (read === 'true') {
       where.read = true
     } else if (read === 'false') {
       where.read = false
+    }
+
+    if (favorite === 'true') {
+      where.favorite = true
     }
 
     // For search, we'll get all articles first and then filter in memory
