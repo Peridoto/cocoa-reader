@@ -107,7 +107,12 @@ export function ArticleList({
                   {article.domain}
                 </a>
                 <span>•</span>
-                <span>{formatDistanceToNow(new Date(article.createdAt))} ago</span>
+                <span>
+                  {(() => {
+                    const timeText = formatDistanceToNow(new Date(article.createdAt))
+                    return timeText === 'just now' ? timeText : `${timeText} ago`
+                  })()}
+                </span>
               </div>
 
               {article.excerpt && (

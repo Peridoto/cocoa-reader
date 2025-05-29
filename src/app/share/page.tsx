@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import SharePageContentDebug from './SharePageContentDebug'
+import SharePageContentProduction from './SharePageContentProduction'
 
 function LoadingFallback() {
   return (
@@ -22,8 +22,6 @@ function LoadingFallback() {
 }
 
 export default function SharePage() {
-  console.log('SharePage component rendering')
-  
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
@@ -31,7 +29,7 @@ export default function SharePage() {
           Add Article
         </h1>
         <Suspense fallback={<LoadingFallback />}>
-          <SharePageContentDebug />
+          <SharePageContentProduction />
         </Suspense>
       </div>
     </div>
