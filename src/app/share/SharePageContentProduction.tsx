@@ -45,7 +45,7 @@ export default function SharePageContentProduction() {
 
   // Check if user is online
   const isOnline = () => {
-    return navigator.onLine;
+    return typeof window !== 'undefined' && navigator.onLine;
   };
 
   // Create offline article with minimal data

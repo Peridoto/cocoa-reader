@@ -1,0 +1,46 @@
+PODS:
+  - Capacitor (7.2.0):
+    - CapacitorCordova
+  - CapacitorBrowser (7.0.1):
+    - Capacitor
+  - CapacitorCordova (7.2.0)
+  - CapacitorShare (7.0.1):
+    - Capacitor
+  - CapacitorSplashScreen (7.0.1):
+    - Capacitor
+  - CapacitorStatusBar (7.0.1):
+    - Capacitor
+
+DEPENDENCIES:
+  - "Capacitor (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorBrowser (from `../../node_modules/@capacitor/browser`)"
+  - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
+  - "CapacitorShare (from `../../node_modules/@capacitor/share`)"
+  - "CapacitorSplashScreen (from `../../node_modules/@capacitor/splash-screen`)"
+  - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
+
+EXTERNAL SOURCES:
+  Capacitor:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorBrowser:
+    :path: "../../node_modules/@capacitor/browser"
+  CapacitorCordova:
+    :path: "../../node_modules/@capacitor/ios"
+  CapacitorShare:
+    :path: "../../node_modules/@capacitor/share"
+  CapacitorSplashScreen:
+    :path: "../../node_modules/@capacitor/splash-screen"
+  CapacitorStatusBar:
+    :path: "../../node_modules/@capacitor/status-bar"
+
+SPEC CHECKSUMS:
+  Capacitor: 106e7a4205f4618d582b886a975657c61179138d
+  CapacitorBrowser: 081852cf532acf77b9d2953f3a88fe5b9711fb06
+  CapacitorCordova: 5967b9ba03915ef1d585469d6e31f31dc49be96f
+  CapacitorShare: 58d6c2da63b093e8693287b2d36db92435538435
+  CapacitorSplashScreen: 19cd3573e57507e02d6f34597a8c421e00931487
+  CapacitorStatusBar: 275cbf2f4dfc00388f519ef80c7ec22edda342c9
+
+PODFILE CHECKSUM: dcef67f506478c441022eabcaf5b41c4fc5414a7
+
+COCOAPODS: 1.10.1
