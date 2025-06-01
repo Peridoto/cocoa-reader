@@ -1,88 +1,74 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/router'
 import { ClientScraper } from '@/lib/client-scraper'
 import { localDB } from '@/lib/local-database'
 import type { Article } from '@/types/article'
 
 export default function SharePageContent() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [processing, setProcessing] = useState(false)
   const [article, setArticle] = useState<Article | null>(null)
   const [error, setError] = useState('')
   const [urlParam, setUrlParam] = useState<string | null>(null)
 
-  console.log('SharePageContent render - states:', { processing, article: !!article, error, urlParam })
+  console.log('SharePageContent render')
 
   useEffect(() => {
-    console.log('=== SharePageContent useEffect START ===')
-    
-    const url = searchParams.get('url')
-    const title = searchParams.get('title')
-    const text = searchParams.get('text')
+    // Use router.query instead of useSearchParams for Next.js 12
+    const { url, title, text } = router.query
+    const urlString = Array.isArray(url) ? url[0] : url
+    const titleString = Array.isArray(title) ? title[0] : title
+    const textString = Array.isArray(text) ? text[0] : text
 
-    console.log('SharePageContent useEffect triggered:', { url, title, text })
-    console.log('All search params:', Object.fromEntries(searchParams.entries()))
-    console.log('Search params keys:', Array.from(searchParams.keys()))
-    console.log('Search params values:', Array.from(searchParams.values()))
-    console.log('Window location search:', typeof window !== 'undefined' ? window.location.search : 'server-side')
+    console.log('SharePageContent: Processing shared URL:', urlString)
     
-    setUrlParam(url) // Store URL param for debugging
+    setUrlParam(urlString || null) // Store URL param for debugging
 
-    if (url && url.trim()) {
-      console.log('✅ URL found, calling handleSharedUrl:', url)
-      setProcessing(true) // Ensure processing state is set
-      handleSharedUrl(url, title, text).catch(err => {
-        console.error('❌ handleSharedUrl failed:', err)
+    if (urlString && urlString.trim()) {
+      console.log('✅ Valid URL found, processing article')
+      setProcessing(true)
+      handleSharedUrl(urlString, titleString, textString).catch(err => {
+        console.error('❌ Failed to process shared URL:', err)
         setError(`Failed to process URL: ${err.message}`)
         setProcessing(false)
       })
     } else {
-      console.log('❌ No valid URL found in search params')
-      console.log('Available search params keys:', Array.from(searchParams.keys()))
-      console.log('URL value type:', typeof url, 'URL value:', JSON.stringify(url))
+      console.log('❌ No valid URL found in shared data')
       setProcessing(false)
     }
-    
-    console.log('=== SharePageContent useEffect END ===')
-    // If no URL, just show the "No Article to Process" state
-  }, [searchParams])
+  }, [router.query])
 
   const handleSharedUrl = async (url: string, title?: string | null, text?: string | null) => {
-    console.log('handleSharedUrl called with:', { url, title, text })
+    console.log('Processing shared URL:', url)
     try {
       setProcessing(true)
       setError('')
 
-      // Initialize database with timeout
-      console.log('Initializing local database...')
+      // Initialize database
+      console.log('Initializing database...')
       const initTimeout = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Database initialization timeout')), 10000)
       )
       
       await Promise.race([localDB.init(), initTimeout])
-      console.log('Database initialized successfully')
+      console.log('Database initialized')
 
       // Check if article already exists
-      console.log('Checking for existing articles...')
       const existingArticles = await localDB.getAllArticles()
       const existingArticle = existingArticles.find(article => article.url === url)
 
       if (existingArticle) {
-        console.log('Article already exists:', existingArticle.id)
+        console.log('Article already exists in library')
         setArticle(existingArticle)
         setError('This article is already saved in your library.')
         return
       }
 
-      console.log('Creating scraper instance...')
-      // Create scraper instance
+      // Create scraper instance and scrape article
+      console.log('Scraping article content...')
       const scraper = new ClientScraper()
-
-      console.log('Starting to scrape article:', url)
-      // Scrape the article with timeout
       const scrapeTimeout = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Scraping timeout after 30 seconds')), 30000)
       )
@@ -91,7 +77,7 @@ export default function SharePageContent() {
         scraper.scrapeArticle(url),
         scrapeTimeout
       ]) as Partial<Article>
-      console.log('Scraping completed, result:', scrapedData)
+      console.log('Article scraped successfully')
 
       // Create article object
       const newArticle: Omit<Article, 'id'> = {
@@ -263,12 +249,12 @@ export default function SharePageContent() {
                 No Article to Process
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
-                {urlParam ? `Error processing URL: ${urlParam}` : 'No URL was shared to process.'}
+                {urlParam ? `Unable to process the provided URL.` : 'No URL was shared to process.'}
               </p>
               {error && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
                   <p className="text-sm text-red-700 dark:text-red-300">
-                    Debug info: {error}
+                    {error}
                   </p>
                 </div>
               )}

@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-05-31T17:57:48.288Z",
+  "duration": 1020,
+  "results": {
+    "passed": 5,
+    "failed": 6,
+    "skipped": 0,
+    "errors": [
+      {
+        "test": "Build Integrity",
+        "error": "Required file missing: ios/App/App/public/_next/static/chunks/main.js"
+      },
+      {
+        "test": "iOS Assets",
+        "error": "Icon files appear to be too small"
+      },
+      {
+        "test": "App Installation",
+        "error": "App installation test failed: Command failed: cd ios && xcodebuild -workspace App.xcworkspace -scheme App -destination \"platform=iOS Simulator,name=iPhone 15\" build\n2025-05-31 19:57:48.074 xcodebuild[95932:4572349] Writing error result bundle to /var/folders/3k/llr27cz97g18v3v88vfgw0b40000gn/T/ResultBundle_2025-31-05_19-57-0048.xcresult\nxcodebuild: error: 'App.xcworkspace' does not exist.\n"
+      },
+      {
+        "test": "App Launch",
+        "error": "App launch test failed: Command failed: xcrun simctl launch booted io.ionic.cocoareaderweb\nAn error was encountered processing the command (domain=FBSOpenApplicationServiceErrorDomain, code=4):\nSimulator device failed to launch io.ionic.cocoareaderweb.\nUnderlying error (domain=FBSOpenApplicationServiceErrorDomain, code=4):\n\tThe request to open \"io.ionic.cocoareaderweb\" failed.\n"
+      },
+      {
+        "test": "Performance Metrics",
+        "error": "Performance test failed: Command failed: xcrun simctl launch booted io.ionic.cocoareaderweb\nAn error was encountered processing the command (domain=FBSOpenApplicationServiceErrorDomain, code=4):\nSimulator device failed to launch io.ionic.cocoareaderweb.\nUnderlying error (domain=FBSOpenApplicationServiceErrorDomain, code=4):\n\tThe request to open \"io.ionic.cocoareaderweb\" failed.\n"
+      },
+      {
+        "test": "Offline Capabilities",
+        "error": "Offline page not found"
+      }
+    ]
+  },
+  "successRate": 45,
+  "config": {
+    "timeout": 30000,
+    "retries": 3,
+    "simulatorDevice": "iPhone 15",
+    "iosVersion": "17.0"
+  }
+}

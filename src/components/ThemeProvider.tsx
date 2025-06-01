@@ -13,51 +13,84 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Initialize with system preference during SSR to prevent mismatch
   const [theme, setTheme] = useState<Theme>('system')
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light')
+  const [isInitialized, setIsInitialized] = useState(false)
 
+  // Initialize theme on mount (client-side only)
   useEffect(() => {
-    // Get initial theme from localStorage or default to system
-    const savedTheme = localStorage.getItem('theme') as Theme
-    if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
-      setTheme(savedTheme)
+    const initializeTheme = () => {
+      try {
+        // Get saved theme from localStorage
+        const savedTheme = localStorage.getItem('theme') as Theme
+        const validTheme = savedTheme && ['light', 'dark', 'system'].includes(savedTheme) ? savedTheme : 'system'
+        
+        // Determine resolved theme
+        let newResolvedTheme: 'light' | 'dark'
+        if (validTheme === 'system') {
+          newResolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        } else {
+          newResolvedTheme = validTheme
+        }
+        
+        // Update state
+        setTheme(validTheme)
+        setResolvedTheme(newResolvedTheme)
+        
+        // Update DOM
+        const root = document.documentElement
+        root.classList.remove('light', 'dark')
+        root.classList.add(newResolvedTheme)
+        
+        setIsInitialized(true)
+      } catch (error) {
+        console.warn('Theme initialization failed:', error)
+        setIsInitialized(true)
+      }
     }
+
+    initializeTheme()
   }, [])
 
   useEffect(() => {
+    if (!isInitialized) return
+
     const updateTheme = () => {
-      let newResolvedTheme: 'light' | 'dark'
-      
-      if (theme === 'system') {
-        newResolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-      } else {
-        newResolvedTheme = theme
+      try {
+        let newResolvedTheme: 'light' | 'dark'
+        
+        if (theme === 'system') {
+          newResolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        } else {
+          newResolvedTheme = theme
+        }
+        
+        setResolvedTheme(newResolvedTheme)
+        
+        // Update DOM
+        const root = document.documentElement
+        root.classList.remove('light', 'dark')
+        root.classList.add(newResolvedTheme)
+        
+        // Save to localStorage
+        localStorage.setItem('theme', theme)
+      } catch (error) {
+        console.warn('Theme update failed:', error)
       }
-      
-      setResolvedTheme(newResolvedTheme)
-      
-      // Update DOM
-      const root = window.document.documentElement
-      root.classList.remove('light', 'dark')
-      root.classList.add(newResolvedTheme)
-      
-      // Save to localStorage
-      localStorage.setItem('theme', theme)
     }
 
     updateTheme()
 
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleChange = () => {
-      if (theme === 'system') {
-        updateTheme()
-      }
+    // Listen for system theme changes only if theme is 'system'
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const handleChange = () => updateTheme()
+      
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
     }
-    
-    mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
-  }, [theme])
+  }, [theme, isInitialized])
 
   const handleSetTheme = (newTheme: Theme) => {
     setTheme(newTheme)

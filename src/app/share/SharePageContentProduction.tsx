@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/router';
 import { ClientScraper } from '@/lib/client-scraper';
 import { localDB } from '@/lib/local-database';
 import type { Article } from '@/types/article';

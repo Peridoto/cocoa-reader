@@ -126,12 +126,41 @@ export function ArticleList({
             </div>
 
             <div className="flex flex-col gap-2 min-w-[120px]">
-              <Link
-                href={`/read/${article.id}`}
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('Read button clicked for article:', article.id)
+                  console.log('Navigation target:', `/read-article?id=${article.id}`)
+                  
+                  try {
+                    // More robust navigation handling for iOS
+                    const targetUrl = `/read-article?id=${article.id}`
+                    
+                    // Check if we're in a Capacitor context or iOS PWA
+                    const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor
+                    const isIOSPWA = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                                     ((window.navigator as any).standalone === true || 
+                                      window.matchMedia('(display-mode: standalone)').matches)
+                    
+                    if (isCapacitor || isIOSPWA) {
+                      console.log('Using direct navigation for iOS/Capacitor')
+                      // Force a full page navigation for better iOS compatibility
+                      window.location.assign(targetUrl)
+                    } else {
+                      console.log('Using standard navigation')
+                      window.location.href = targetUrl
+                    }
+                  } catch (error) {
+                    console.error('Navigation error:', error)
+                    // Fallback: try basic navigation
+                    window.location.href = `/read-article?id=${article.id}`
+                  }
+                }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-center text-sm"
               >
                 Read
-              </Link>
+              </button>
               
               <button
                 onClick={() => toggleReadStatus(article)}

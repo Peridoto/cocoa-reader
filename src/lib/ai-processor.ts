@@ -69,7 +69,7 @@ export function extractKeySentences(text: string, maxSentences: number = 3): str
 
   // Score sentences based on word frequency and position
   const wordFreq: Record<string, number> = {};
-  const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+  const words: string[] = text.toLowerCase().match(/\b\w+\b/g) || [];
   
   words.forEach(word => {
     if (word.length > 3) {
@@ -78,7 +78,7 @@ export function extractKeySentences(text: string, maxSentences: number = 3): str
   });
 
   const scoredSentences = sentences.map((sentence, index) => {
-    const sentenceWords = sentence.toLowerCase().match(/\b\w+\b/g) || [];
+    const sentenceWords: string[] = sentence.toLowerCase().match(/\b\w+\b/g) || [];
     const score = sentenceWords.reduce((sum, word) => sum + (wordFreq[word] || 0), 0);
     const positionBonus = index < 3 ? 2 : 1; // Boost early sentences
     
@@ -112,7 +112,7 @@ export function analyzeSentiment(text: string): 'positive' | 'negative' | 'neutr
   const positiveWords = ['good', 'great', 'excellent', 'amazing', 'wonderful', 'best', 'love', 'fantastic', 'awesome', 'brilliant'];
   const negativeWords = ['bad', 'terrible', 'awful', 'worst', 'hate', 'horrible', 'disappointing', 'failed', 'problem', 'issue'];
   
-  const words = text.toLowerCase().split(/\W+/);
+  const words: string[] = text.toLowerCase().split(/\W+/);
   const positiveCount = words.filter(word => positiveWords.includes(word)).length;
   const negativeCount = words.filter(word => negativeWords.includes(word)).length;
   
@@ -126,7 +126,7 @@ export function analyzeSentiment(text: string): 'positive' | 'negative' | 'neutr
  */
 export function categorizeArticle(title: string, content: string): ArticleCategories {
   const text = (title + ' ' + content).toLowerCase();
-  const words = text.match(/\b\w+\b/g) || [];
+  const words: string[] = text.match(/\b\w+\b/g) || [];
   
   // Category keywords mapping
   const categoryKeywords: Record<string, string[]> = {
