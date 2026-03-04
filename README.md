@@ -1,10 +1,6 @@
 # 🥥 Coco Reader
 
 <p align="center">
-  <img src="public/icons/icon-192x192.png" alt="Coco Reader Logo" width="128" height="128">
-</p>
-
-<p align="center">
   <strong>A modern, AI-powered read-later Progressive Web App</strong>
 </p>
 
